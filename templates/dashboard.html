@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Theme Toggle Button -->
+<button class="theme-toggle" id="theme-toggle" title="Toggle Light/Dark Mode">🌙</button>
+
+<div class="dashboard">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">SP</div>
+        <div class="nav-item calendar-btn active"></div>
+        <div class="nav-item"></div>
+        <div class="nav-item"></div>
+        <div class="nav-item"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>Smart Productivity Dashboard</h1>
+            <a href="/logout" style="color:#3b82f6; text-decoration:none;">Logout</a>
+        </div>
+
+        <!-- ================= TIMER SECTION ================= -->
+        <div id="section-timer" class="section active-section">
+
+            <!-- Focus Timer -->
+            <div class="glass-card">
+                <h2>Focus Timer</h2>
+
+                <div class="timer-container">
+
+                    <svg class="progress-ring" width="220" height="220">
+                        <circle
+                            class="progress-ring-bg"
+                            stroke="#334155"
+                            stroke-width="12"
+                            fill="transparent"
+                            r="100"
+                            cx="110"
+                            cy="110"/>
+                        <circle
+                            class="progress-ring-circle"
+                            stroke="#22c55e"
+                            stroke-width="12"
+                            fill="transparent"
+                            r="100"
+                            cx="110"
+                            cy="110"/>
+                    </svg>
+
+                    <div class="timer-display">
+                        <span id="time-left">25:00</span>
+                    </div>
+
+                </div>
+
+                <div class="timer-controls">
+                    <input type="number" id="minutes-input" placeholder="Minutes" min="1">
+                    <button id="start-timer">Start</button>
+                    <button id="pause-timer">Pause</button>
+                    <button id="reset-timer">Reset</button>
+                </div>
+            </div>
+
+            <!-- Daily Completion -->
+            <div class="glass-card">
+                <h2>Daily Completion</h2>
+                <div class="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+                <p id="progress-text">0%</p>
+            </div>
+
+            <!-- Task Manager -->
+            <div class="glass-card">
+                <h2>Top Priority Tasks</h2>
+                <button id="add-task-btn">Add Task</button>
+                <div id="task-container"></div>
+            </div>
+
+        </div>
+
+        <!-- ================= HISTORY SECTION ================= -->
+        <div id="section-history" class="section">
+            <div class="glass-card">
+                <h2>History (Last 7 Days)</h2>
+                <div id="history-container">
+
+                    <div id="history-dates" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;"></div>
+
+                    <div class="glass-card" style="margin-bottom:20px;">
+                        <h3 id="history-date-title">Select a Date</h3>
+                        <div class="progress-bar">
+                            <div id="history-progress-fill"></div>
+                        </div>
+                        <p id="history-progress-text">0%</p>
+                    </div>
+
+                    <div id="history-tasks"></div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= CALENDAR + NOTES SECTION ================= -->
+        <div id="section-calendar" class="section">
+            <div class="glass-card" id="calendar-board">
+                <div class="calendar-header">
+                    <button id="calendar-prev">◀</button>
+                    <h2 id="calendar-month-year">March 2026</h2>
+                    <button id="calendar-next">▶</button>
+                </div>
+                <div class="calendar-grid" id="calendar-grid"></div>
+            </div>
+
+            <div class="glass-card" id="notes-board">
+                <div class="notes-header">
+                    <h3 id="notes-title">Select a date to view notes</h3>
+                    <p id="notes-count"></p>
+                </div>
+
+                <div class="notes-tabs">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="important">Important</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
+                </div>
+
+                <form id="note-form" class="note-form">
+                    <input type="text" id="note-title" placeholder="Title (optional)">
+                    <textarea id="note-desc" rows="3" placeholder="Description"></textarea>
+                    <input type="time" id="note-time">
+                    <label><input type="checkbox" id="note-important"> Mark as Important ⭐</label>
+                    <button type="submit" id="note-submit">Add Note</button>
+                </form>
+
+                <div class="upcoming-section">
+                    <h4>Upcoming Tasks (next 3 days)</h4>
+                    <div id="upcoming-list"></div>
+                </div>
+
+                <div id="notes-list"></div>
+            </div>
+        </div>
+
+        <!-- ================= AI SECTION ================= -->
+        <div id="section-ai" class="section">
+
+            <div class="glass-card">
+                <h2>Study AI Assistant</h2>
+
+                <div id="chat-box"
+                    style="height:300px;
+                            overflow-y:auto;
+                            margin-bottom:15px;
+                            padding:15px;
+                            background:#0f172a;
+                            border-radius:12px;">
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <input type="text"
+                        id="chat-input"
+                        placeholder="Ask study-related question..."
+                        style="flex:1; padding:10px; border-radius:8px; border:none;">
+
+                    <button id="send-btn"
+                            style="padding:10px 18px;
+                                border:none;
+                                border-radius:8px;
+                                background:#3b82f6;
+                                color:white;
+                                cursor:pointer;">
+                        Send
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= ANALYTICS SECTION ================= -->
+        <div id="section-analytics" class="section">
+            <div class="glass-card">
+                <h2>Analytics</h2>
+                <div id="analytics-container">
+                    <p>Analytics dashboard will appear here.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-menu">
+    <div class="menu-item active" data-section="timer">
+        <span>Timer</span>
+    </div>
+    <div class="menu-item" data-section="history">
+        <span>History</span>
+    </div>
+    <div class="menu-item" data-section="ai">
+        <span>AI</span>
+    </div>
+    <div class="menu-item" data-section="analytics">
+        <span>Analytics</span>
+    </div>
+</div>
+
+<!-- Modular JS -->
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+<script src="{{ url_for('static', filename='js/deadline.js') }}"></script>
+<script src="{{ url_for('static', filename='js/timer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

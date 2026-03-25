@@ -1,0 +1,18 @@
+# Environment variables (VERY IMPORTANT)
+.env
+
+# Python virtual environment
+venv/
+__pycache__/
+
+# Database files
+*.db
+
+# Python compiled files
+*.pyc
+
+# VS Code settings (optional)
+.vscode/
+
+# OS files
+.DS_Store
