@@ -10,6 +10,10 @@ function showSection(name) {
     const targetSection = document.getElementById("section-" + name);
     if (targetSection) {
         targetSection.classList.add("active-section");
+        // Notify other modules (e.g. motivational quotes) when the visible screen changes.
+        document.dispatchEvent(
+            new CustomEvent("smartplanner:screenchange", { detail: { screen: name } })
+        );
     }
 }
 

@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Login - Smart Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -115,6 +116,9 @@ button:hover {
     </div>
 
 </div>
+
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+{% include 'feedback_widget.html' %}
 
 </body>
 </html>

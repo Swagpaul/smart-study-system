@@ -1,0 +1,18 @@
+<!-- Feedback Floating Button + Modal -->
+<div class="feedback-floating" id="feedbackFloating" title="Give Feedback">
+    <span>💬</span>
+</div>
+
+<div class="feedback-modal-overlay" id="feedbackModalOverlay" aria-hidden="true">
+    <div class="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+        <div class="feedback-modal-header">
+            <h2 id="feedbackTitle">We value your feedback 💬</h2>
+            <button type="button" class="feedback-close" id="feedbackClose" aria-label="Close feedback form">×</button>
+        </div>
+        <textarea id="feedbackMessage" maxlength="500" placeholder="Share your thoughts, suggestions, or issues (max 500 chars)"></textarea>
+        <div class="feedback-controls">
+            <div class="feedback-note" id="feedbackStatus"></div>
+            <button id="feedbackSubmit">Send Feedback</button>
+        </div>
+    </div>
+</div>

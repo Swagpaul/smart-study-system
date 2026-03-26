@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Register - Smart Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -104,6 +105,9 @@
         Already have an account? <a href="/login">Login</a>
     </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+{% include 'feedback_widget.html' %}
 
 </body>
 </html>

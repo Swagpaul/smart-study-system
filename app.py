@@ -17,6 +17,10 @@ CORS(app)
 # ============================================
 # Load API key from environment variable
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Avoid logging the raw API key (security).
+print("Loaded API Key:", "present" if GEMINI_API_KEY else "missing")
+
 if not GEMINI_API_KEY:
     raise RuntimeError(
         "GEMINI_API_KEY not set in .env file.\n"
@@ -47,6 +51,50 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
+def extract_gemini_text(response):
+    """Normalize text extraction across different Gemini SDK response shapes."""
+    # Newer SDKs may expose output/content blocks.
+    reply_text = ""
+    for output_block in getattr(response, "output", []):
+        for content in getattr(output_block, "content", []):
+            if hasattr(content, "text") and content.text:
+                reply_text += content.text
+            elif isinstance(content, dict) and content.get("text"):
+                reply_text += content.get("text")
+
+    if reply_text.strip():
+        return reply_text.strip()
+
+    # Alternate response fields in other SDK versions.
+    if hasattr(response, "text") and response.text:
+        return str(response.text).strip()
+
+    # Dictionary-like fallback (defensive).
+    if isinstance(response, dict):
+        text_val = response.get("text")
+        if text_val:
+            return str(text_val).strip()
+
+    return ""
+
+
+def generate_gemini_text(local_client, prompt):
+    """
+    Compatibility wrapper for Gemini SDK variants:
+    - client.responses.create(...)
+    - client.models.generate_content(...)
+    """
+    if hasattr(local_client, "responses"):
+        response = local_client.responses.create(model=GEMINI_MODEL, input=prompt)
+        return extract_gemini_text(response)
+
+    if hasattr(local_client, "models"):
+        response = local_client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+        return extract_gemini_text(response)
+
+    raise RuntimeError("Unsupported Gemini SDK: neither responses nor models API available")
+
+
 # models
 
 class User(db.Model):
@@ -63,6 +111,12 @@ class Task(db.Model):
     date = db.Column(db.String(20))
     priority = db.Column(db.String(10), default="medium")
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -118,6 +172,32 @@ def register():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+
+@app.route('/submit-feedback', methods=['POST'])
+def submit_feedback():
+    data = request.get_json(silent=True) or {}
+    message = (data.get('message') or '').strip()
+
+    if not message:
+        return jsonify({'success': False, 'error': 'Feedback message cannot be empty.'}), 400
+    if len(message) > 500:
+        return jsonify({'success': False, 'error': 'Feedback must be under 500 characters.'}), 400
+
+    feedback = Feedback(message=message)
+    db.session.add(feedback)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Thank you for your feedback!'}), 201
+
+
+@app.route('/admin/feedbacks')
+def admin_feedbacks():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+    return render_template('admin_feedbacks.html', feedbacks=feedbacks)
 
 
 # task api s
@@ -246,39 +326,111 @@ def is_academic_question(message):
 @app.route("/api/ask-ai", methods=["POST"])
 def ask_ai():
     """AI assistant route: process study questions using Gemini."""
-    data = request.json or {}
-    question = data.get("question", "").strip()
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
 
-    # Validate input
     if not question:
-        return jsonify({"error": "Question is required"}), 400
+        return jsonify({"error": "question is required"}), 400
 
-    # Apply study filter - reject non-academic questions
     if not is_academic_question(question):
         return jsonify({"reply": "I am designed to help only with study-related queries."})
 
-    # Build prompt for Gemini
-    prompt = f"You are a strict study assistant. Give clear, concise, educational answers.\n\nQuestion: {question}"
+    if client is None:
+        print("Gemini client is not initialized. API key may be missing or invalid.")
+        return jsonify({"error": "AI service unavailable"}), 503
+
+    prompt = (
+        "You are a strict study assistant. Give clear, concise, educational answers.\n"
+        "Answer in a short study-friendly format with examples where appropriate.\n\n"
+        f"Student question: {question}\n\n"
+        "Answer:"
+    )
 
     try:
-        # Call Gemini API with latest google-genai SDK
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt
-        )
+        # Re-create client on each call to ensure clean auth state
+        current_key = os.getenv("GEMINI_API_KEY")
+        if not current_key:
+            print("Gemini API key not found in environment.")
+            return jsonify({"error": "AI service error: API key missing"}), 500
 
-        # Extract and validate response text
-        reply = response.text.strip() if response.text else ""
+        client = genai.Client(api_key=current_key)
+
+        reply = generate_gemini_text(client, prompt)
 
         if not reply:
+            print("Gemini API returned empty text response", response)
             return jsonify({"reply": "Unable to generate a response. Please try again."})
 
         return jsonify({"reply": reply})
 
     except Exception as e:
-        # Log error for debugging
-        print(f"Gemini API error: {str(e)}")
-        return jsonify({"error": "AI service error: Unable to process request"}), 500
+        err_text = str(e)
+        print("Gemini API error:", err_text)
+
+        if "API Key not found" in err_text or "API_KEY_INVALID" in err_text or "INVALID_ARGUMENT" in err_text:
+            return jsonify({"error": "AI service error: API key missing/invalid. Please check GEMINI_API_KEY."}), 401
+
+        return jsonify({"error": "AI service error: Unable to process request."}), 500
+
+
+@app.route("/api/motivation-quote", methods=["POST"])
+def motivation_quote():
+    """
+    Motivational quotes endpoint.
+    Returns JSON: { "quote": "..." }
+    On any failure, returns a safe fallback quote (no hard error to the frontend).
+    """
+    data = request.get_json(silent=True) or {}
+    screen = (data.get("screen") or "").strip().lower()
+
+    fallback_quote = "Stay consistent. You're building something great."
+
+    # Map UI screen IDs to prompt-friendly descriptions.
+    # (The frontend caches per-screen, but the AI prompt uses these descriptions.)
+    screen_name_map = {
+        "dashboard": "general motivation",
+        "calendar": "planning and discipline",
+        "timer": "focus and deep work",
+        "tasks": "productivity and execution",
+        "history": "productivity and execution",
+        "ai": "general motivation",
+        "analytics": "productivity and execution",
+    }
+
+    screen_name = screen_name_map.get(screen, screen_name_map["dashboard"])
+
+    prompt = (
+        "Give me a short motivational quote for a student working on "
+        f"{screen_name}.\n"
+        "Keep it under 15 words. Make it powerful and unique.\n\n"
+        "Return only the quote text, with no surrounding quotes or extra commentary."
+    )
+
+    try:
+        current_key = os.getenv("GEMINI_API_KEY")
+        if not current_key:
+            return jsonify({"quote": fallback_quote, "fallback": True}), 200
+
+        local_client = genai.Client(api_key=current_key)
+        quote = generate_gemini_text(local_client, prompt).strip().strip('"').strip("'")
+
+        if not quote:
+            return jsonify({"quote": fallback_quote, "fallback": True}), 200
+
+        # Enforce the "under 15 words" requirement defensively.
+        words = quote.split()
+        if len(words) > 15:
+            quote = " ".join(words[:15]).strip()
+            # Keep punctuation natural if truncation cut mid-sentence.
+            if quote and quote[-1] not in ".!?":
+                quote = quote + "."
+
+        return jsonify({"quote": quote, "fallback": False}), 200
+
+    except Exception as e:
+        # Never crash the page due to AI issues.
+        print("Gemini quote error:", str(e))
+        return jsonify({"quote": fallback_quote, "fallback": True}), 200
 
 
 if __name__ == "__main__":
