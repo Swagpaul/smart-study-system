@@ -2,8 +2,8 @@
 
 const menuItems = document.querySelectorAll(".menu-item");
 const sideItems = document.querySelectorAll(".sidebar .nav-item");
+const sideSectionItems = document.querySelectorAll(".sidebar .nav-item[data-section]");
 const sections = document.querySelectorAll(".section");
-const sidebarSectionMap = ["calendar", "timer", "history", "ai"];
 
 function showSection(name) {
     sections.forEach(section => section.classList.remove("active-section"));
@@ -29,12 +29,16 @@ menuItems.forEach(item => {
     });
 });
 
-sideItems.forEach((item, index) => {
+sideSectionItems.forEach((item) => {
     item.addEventListener("click", function () {
+        if (this.classList.contains("forest-link")) {
+            return;
+        }
+
         sideItems.forEach(i => i.classList.remove("active"));
         this.classList.add("active");
 
-        const section = sidebarSectionMap[index] || "timer";
+        const section = this.dataset.section || "calendar";
         showSection(section);
 
         menuItems.forEach(i => i.classList.remove("active"));
@@ -46,6 +50,26 @@ sideItems.forEach((item, index) => {
 
 // initial state
 if (sideItems.length) {
-    sideItems[0].classList.add("active");
-    showSection("calendar");
+    const allowedSections = new Set(["calendar", "timer", "history", "ai", "analytics"]);
+    const requestedSection = new URLSearchParams(window.location.search).get("section");
+    const initialSection = allowedSections.has(requestedSection) ? requestedSection : "calendar";
+
+    sideItems.forEach(i => i.classList.remove("active"));
+    const initialSidebarItem = document.querySelector(`.sidebar .nav-item[data-section="${initialSection}"]`);
+    if (initialSidebarItem) {
+        initialSidebarItem.classList.add("active");
+    } else {
+        const fallbackSidebarItem = document.querySelector(".sidebar .nav-item[data-section]");
+        if (fallbackSidebarItem) {
+            fallbackSidebarItem.classList.add("active");
+        }
+    }
+
+    showSection(initialSection);
+
+    menuItems.forEach(i => i.classList.remove("active"));
+    const initialBottomTarget = document.querySelector(`.menu-item[data-section="${initialSection}"]`);
+    if (initialBottomTarget) {
+        initialBottomTarget.classList.add("active");
+    }
 }

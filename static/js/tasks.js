@@ -97,11 +97,26 @@ function createTaskElement(taskData) {
     }
 
     checkbox.addEventListener("change", async function() {
-        await fetch(`/tasks/${task.dataset.id}`, {
+        const res = await fetch(`/tasks/${task.dataset.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ completed: this.checked })
         });
+
+        if (!res.ok) {
+            this.checked = !this.checked;
+            console.error("Failed to update task status:", res.status, res.statusText);
+            return;
+        }
+
+        const data = await res.json();
+        if (data && data.new_stage) {
+            window.dispatchEvent(new CustomEvent("forestUpdate", {
+                detail: {
+                    stage: data.new_stage
+                }
+            }));
+        }
 
         task.classList.toggle("completed");
         updateProgress();

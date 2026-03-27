@@ -51,6 +51,36 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
+def ensure_forest_points():
+    """Initialize and normalize hidden forest points in session."""
+    if "forest_points" not in session:
+        session["forest_points"] = 0
+    session["forest_points"] = max(0, int(session.get("forest_points", 0)))
+
+
+def adjust_forest_points(delta):
+    ensure_forest_points()
+    session["forest_points"] = max(0, session["forest_points"] + int(delta))
+
+
+def get_forest_stage(points):
+    if points < 50:
+        return "seed"
+    elif points < 150:
+        return "sprout"
+    elif points < 300:
+        return "young_trees"
+    elif points < 600:
+        return "forest"
+    else:
+        return "lush_forest"
+
+
+@app.before_request
+def initialize_forest_points():
+    ensure_forest_points()
+
+
 def extract_gemini_text(response):
     """Normalize text extraction across different Gemini SDK response shapes."""
     # Newer SDKs may expose output/content blocks.
@@ -126,7 +156,40 @@ class Feedback(db.Model):
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    last_decay_date = session.get("forest_decay_date")
+
+    # Apply daily decay once per day when opening dashboard if any task remains incomplete.
+    if last_decay_date != today:
+        has_incomplete = Task.query.filter_by(
+            user_id=session["user_id"],
+            completed=False
+        ).first() is not None
+
+        if has_incomplete:
+            adjust_forest_points(-15)
+
+        session["forest_decay_date"] = today
+
     return render_template("dashboard.html")
+
+
+@app.route("/forest")
+def forest():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("forest.html")
+
+
+@app.route("/forest-data")
+def forest_data():
+    if "user_id" not in session:
+        return jsonify({"stage": "seed"})
+
+    points = session.get("forest_points", 0)
+    stage = get_forest_stage(points)
+    return jsonify({"stage": stage})
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -257,16 +320,52 @@ def update_task(id):
     task = Task.query.get(id)
     data = request.json
 
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
     if task.user_id != session.get("user_id"):
         return jsonify({"error": "Unauthorized"}), 403
+
+    was_completed = bool(task.completed)
+    old_priority = (task.priority or "medium").lower()
 
     task.title = data.get("title", task.title)
     task.deadline = data.get("deadline", task.deadline)
     task.completed = data.get("completed", task.completed)
     task.priority = data.get("priority", task.priority)
 
+    is_completed = bool(task.completed)
+    new_priority = (task.priority or old_priority or "medium").lower()
+
+    # Points are hidden from UI; only forest stage is exposed.
+    if not was_completed and is_completed:
+        if new_priority in ("high", "important"):
+            adjust_forest_points(+20)
+        else:
+            adjust_forest_points(+10)
+    elif was_completed and not is_completed:
+        adjust_forest_points(-15)
+
+    # Optional bonus: all tasks for the date are completed.
+    if task.date:
+        tasks_for_date = Task.query.filter_by(
+            user_id=session["user_id"],
+            date=task.date
+        ).all()
+        if tasks_for_date and all(t.completed for t in tasks_for_date):
+            bonus_key = f"forest_bonus_{task.date}"
+            if not session.get(bonus_key, False):
+                adjust_forest_points(+20)
+                session[bonus_key] = True
+        else:
+            # Allow earning the bonus later if tasks become complete again.
+            bonus_key = f"forest_bonus_{task.date}"
+            session[bonus_key] = False
+
     db.session.commit()
-    return jsonify({"message": "Task updated"})
+    return jsonify({
+        "success": True,
+        "new_stage": get_forest_stage(session.get("forest_points", 0))
+    })
 
 
 @app.route("/tasks/<int:id>", methods=["DELETE"])
