@@ -158,31 +158,42 @@
         <div id="section-ai" class="section">
 
             <div class="glass-card">
-                <h2>Study AI Assistant</h2>
+                <h2>📚 StudyBot</h2>
+                <p style="color:#94a3b8; margin-bottom:12px; font-size:0.9em;">Your AI-powered study assistant</p>
 
                 <div id="chat-box"
-                    style="height:300px;
+                    style="height:360px;
                             overflow-y:auto;
-                            margin-bottom:15px;
+                            margin-bottom:12px;
                             padding:15px;
                             background:#0f172a;
-                            border-radius:12px;">
+                            border-radius:12px;
+                            scroll-behavior:smooth;">
                 </div>
+
+                <div id="chat-suggestions" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
 
                 <div style="display:flex; gap:10px;">
                     <input type="text"
                         id="chat-input"
-                        placeholder="Ask study-related question..."
-                        style="flex:1; padding:10px; border-radius:8px; border:none;">
+                        placeholder="Ask a study question... (press Enter to send)"
+                        style="flex:1; padding:12px 16px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f1f5f9; font-size:0.95em;"
+                        autocomplete="off">
 
                     <button id="send-btn"
-                            style="padding:10px 18px;
+                            style="padding:12px 20px;
                                 border:none;
-                                border-radius:8px;
-                                background:#3b82f6;
+                                border-radius:10px;
+                                background:linear-gradient(135deg, #3b82f6, #6366f1);
                                 color:white;
-                                cursor:pointer;">
-                        Send
+                                cursor:pointer;
+                                font-weight:600;
+                                font-size:0.95em;
+                                transition:transform 0.1s, opacity 0.2s;"
+                            onmousedown="this.style.transform='scale(0.95)'"
+                            onmouseup="this.style.transform='scale(1)'"
+                            onmouseleave="this.style.transform='scale(1)'">
+                        Send ➤
                     </button>
                 </div>
 
@@ -203,24 +214,6 @@
     </div>
 </div>
 
-<!-- Study Music Player -->
-<div id="music-player">
-    <div class="music-controls">
-        <div class="music-control-row">
-            <select id="sound-select">
-                <option value="white">White Noise</option>
-                <option value="brown">Brown Noise</option>
-                <option value="rain">Rain / Nature</option>
-            </select>
-        </div>
-        <div class="music-control-row">
-            <button id="play-pause-btn" title="Play/Pause">▶</button>
-            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
-        </div>
-    </div>
-    <button class="music-toggle-btn" id="music-toggle-btn" title="Study Music">🎧</button>
-</div>
-
 <!-- Bottom Navigation -->
 <div class="bottom-menu">
     <div class="menu-item active" data-section="timer">
@@ -238,7 +231,6 @@
 </div>
 
 <!-- Modular JS -->
-<script src="{{ url_for('static', filename='js/music.js') }}"></script>
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
 <script src="{{ url_for('static', filename='js/deadline.js') }}"></script>
@@ -247,7 +239,7 @@
 <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/history.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ai.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
 {% include 'feedback_widget.html' %}
