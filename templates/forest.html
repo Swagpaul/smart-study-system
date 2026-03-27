@@ -29,11 +29,30 @@
     </div>
 </div>
 
+<!-- Study Music Player -->
+<div id="music-player">
+    <div class="music-controls">
+        <div class="music-control-row">
+            <select id="sound-select">
+                <option value="white">White Noise</option>
+                <option value="brown">Brown Noise</option>
+                <option value="rain">Rain / Nature</option>
+            </select>
+        </div>
+        <div class="music-control-row">
+            <button id="play-pause-btn" title="Play/Pause">▶</button>
+            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+    </div>
+    <button class="music-toggle-btn" id="music-toggle-btn" title="Study Music">🎧</button>
+</div>
+
 <div class="bottom-menu">
     <a class="menu-item" href="/?section=timer">Dashboard</a>
     <div class="menu-item active">Focus Forest</div>
 </div>
 
+<script src="{{ url_for('static', filename='js/music.js') }}"></script>
 <script src="{{ url_for('static', filename='js/forest.js') }}"></script>
 </body>
 </html>

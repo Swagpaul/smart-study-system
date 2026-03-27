@@ -474,6 +474,7 @@ def is_academic_question(message):
 
 
 @app.route("/api/ask-ai", methods=["POST"])
+@app.route("/api/ask-ai", methods=["POST"])
 def ask_ai():
     """AI assistant route: process study questions using Gemini."""
     data = request.get_json(silent=True) or {}
@@ -485,10 +486,6 @@ def ask_ai():
     if not is_academic_question(question):
         return jsonify({"reply": "I am designed to help only with study-related queries."})
 
-    if client is None:
-        print("Gemini client is not initialized. API key may be missing or invalid.")
-        return jsonify({"error": "AI service unavailable"}), 503
-
     prompt = (
         "You are a strict study assistant. Give clear, concise, educational answers.\n"
         "Answer in a short study-friendly format with examples where appropriate.\n\n"
@@ -497,18 +494,19 @@ def ask_ai():
     )
 
     try:
-        # Re-create client on each call to ensure clean auth state
         current_key = os.getenv("GEMINI_API_KEY")
+
         if not current_key:
-            print("Gemini API key not found in environment.")
+            print("Gemini API key missing")
             return jsonify({"error": "AI service error: API key missing"}), 500
 
-        client = genai.Client(api_key=current_key)
+        # ✅ Use local client (no scope issues)
+        local_client = genai.Client(api_key=current_key)
 
-        reply = generate_gemini_text(client, prompt)
+        reply = generate_gemini_text(local_client, prompt)
 
         if not reply:
-            print("Gemini API returned empty text response", response)
+            print("Gemini API returned empty text response")
             return jsonify({"reply": "Unable to generate a response. Please try again."})
 
         return jsonify({"reply": reply})
@@ -517,10 +515,21 @@ def ask_ai():
         err_text = str(e)
         print("Gemini API error:", err_text)
 
-        if "API Key not found" in err_text or "API_KEY_INVALID" in err_text or "INVALID_ARGUMENT" in err_text:
-            return jsonify({"error": "AI service error: API key missing/invalid. Please check GEMINI_API_KEY."}), 401
+        # ✅ Better error detection
+        if any(x in err_text for x in [
+            "API_KEY_INVALID",
+            "INVALID_ARGUMENT",
+            "API key expired",
+            "API key not valid"
+        ]):
+            return jsonify({
+                "error": "AI service error: API key invalid or expired. Please update it."
+            }), 401
 
-        return jsonify({"error": "AI service error: Unable to process request."}), 500
+        return jsonify({
+            "error": "AI service error: Unable to process request."
+        }), 500
+    
 
 
 @app.route("/api/motivation-quote", methods=["POST"])
