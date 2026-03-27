@@ -1,17 +1,17 @@
 /* ================= CSS VARIABLES ================= */
 
 :root {
-    --bg-primary: #041022;
-    --bg-secondary: #0b1c38;
-    --bg-card: rgba(10, 23, 47, 0.84);
-    --bg-surface: rgba(15, 30, 58, 0.85);
-    --text-primary: #e7f1ff;
-    --text-secondary: #9cb8d4;
-    --border: rgba(32, 196, 255, 0.25);
-    --accent-1: #22c7ff;
-    --accent-2: #ff8f33;
-    --accent-3: #a8e64f;
-    --shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    --bg-primary: #010712;
+    --bg-secondary: #06132a;
+    --bg-card: rgba(5, 14, 30, 0.9);
+    --bg-surface: rgba(9, 22, 45, 0.9);
+    --text-primary: #f3f8ff;
+    --text-secondary: #b2c8e1;
+    --border: rgba(52, 210, 255, 0.36);
+    --accent-1: #32d2ff;
+    --accent-2: #ffa03f;
+    --accent-3: #b8ef5c;
+    --shadow: 0 18px 42px rgba(0, 0, 0, 0.62);
     --font-primary: 'Poppins', 'Inter', sans-serif;
 }
 
@@ -118,7 +118,7 @@ body.light-mode .glass-card {
 body {
     margin: 0;
     font-family: var(--font-primary);
-    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+    background: radial-gradient(circle at 20% 0%, #081a35 0%, var(--bg-primary) 42%, var(--bg-secondary) 100%);
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
@@ -254,7 +254,7 @@ body.light-mode .glass-card {
 
 .glass-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 20px 42px rgba(0, 0, 0, 0.6);
 }
 
 /* Progress */
@@ -271,7 +271,7 @@ body.light-mode .glass-card {
     width: 0%;
     background: var(--accent-2);
     transition: width 0.4s ease, background 0.4s ease;
-    box-shadow: 0 0 12px rgba(34, 199, 255, 0.65);
+    box-shadow: 0 0 16px rgba(50, 210, 255, 0.8);
 }
 
 /* Button */
@@ -296,7 +296,7 @@ body.light-mode button {
 
 button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 20px rgba(34, 199, 255, 0.35);
+    box-shadow: 0 14px 24px rgba(50, 210, 255, 0.5);
 }
 
 button:active {

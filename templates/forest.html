@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Focus Forest</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="forest-page">
+
+<div class="dashboard">
+    <div class="sidebar">
+        <div class="logo">SP</div>
+        <a href="/" class="nav-item calendar-btn" title="Dashboard" aria-label="Dashboard"></a>
+        <a href="/forest" class="nav-item forest-btn active forest-link" title="Focus Forest" aria-label="Focus Forest"></a>
+    </div>
+
+    <div class="main">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>Focus Forest</h1>
+            <a href="/logout" style="color:#3b82f6; text-decoration:none;">Logout</a>
+        </div>
+
+        <div class="glass-card forest-stage-card">
+            <div id="forest-container">
+                <img id="forest-image" src="" alt="Forest growth stage">
+                <p id="forest-message"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-menu">
+    <a class="menu-item" href="/?section=timer">Dashboard</a>
+    <div class="menu-item active">Focus Forest</div>
+</div>
+
+<script src="{{ url_for('static', filename='js/forest.js') }}"></script>
+</body>
+</html>
