@@ -4,6 +4,8 @@ from flask_cors import CORS
 from datetime import datetime
 import hashlib
 import os
+import time
+import random
 from dotenv import load_dotenv
 from google import genai
 
@@ -38,6 +40,29 @@ except Exception as e:
 
 # Model configuration - using latest Gemini 2.0 Flash model
 GEMINI_MODEL = "gemini-3-flash-preview"
+
+# ---------- Rate-limit & caching ----------
+_rate_limit_until = 0  # timestamp until which we should not call the API
+_quote_cache = {}      # {screen: {"quote": str, "ts": float}}
+QUOTE_CACHE_TTL = 300  # 5 minutes
+
+LOCAL_QUOTES = [
+    "Small steps every day lead to massive results.",
+    "Discipline is choosing between what you want now and what you want most.",
+    "Your future self will thank you for studying today.",
+    "Stay focused — distractions steal dreams.",
+    "Progress, not perfection, is what matters.",
+    "The expert in anything was once a beginner.",
+    "Hard work beats talent when talent doesn't work hard.",
+    "Believe you can and you're halfway there.",
+    "Success is the sum of small efforts repeated daily.",
+    "Don't wish it were easier — wish you were better.",
+    "Knowledge is power. Keep learning.",
+    "Push yourself, because no one else will do it for you.",
+    "Great things never come from comfort zones.",
+    "Dream big. Start small. Act now.",
+    "You don't have to be great to start, but start to be great.",
+]
 
 # Secret key for sessions
 app.config["SECRET_KEY"] = "supersecretkey"
@@ -473,63 +498,51 @@ def is_academic_question(message):
     return any(keyword in lower for keyword in study_keywords)
 
 
-@app.route("/api/ask-ai", methods=["POST"])
-@app.route("/api/ask-ai", methods=["POST"])
-def ask_ai():
-    """AI assistant route: process study questions using Gemini."""
+@app.route("/api/chatbot", methods=["POST"])
+def chatbot():
+    """
+    Study chatbot endpoint — no restrictions.
+    Uses Gemini to answer any question.
+    """
     data = request.get_json(silent=True) or {}
-    question = (data.get("question") or "").strip()
+    message = (data.get("message") or "").strip()
 
-    if not question:
-        return jsonify({"error": "question is required"}), 400
+    if not message:
+        return jsonify({"error": "Message is required."}), 400
 
-    if not is_academic_question(question):
-        return jsonify({"reply": "I am designed to help only with study-related queries."})
-
+    # Build the prompt
     prompt = (
-        "You are a strict study assistant. Give clear, concise, educational answers.\n"
-        "Answer in a short study-friendly format with examples where appropriate.\n\n"
-        f"Student question: {question}\n\n"
+        "You are StudyBot, a friendly and helpful assistant.\n"
+        "Rules:\n"
+        "- Give clear, concise answers with examples when helpful.\n"
+        "- Use **bold** for key terms and `code` for code snippets.\n"
+        "- Keep answers focused and under 200 words.\n"
+        "- Use bullet points for lists.\n\n"
+        f"Question: {message}\n\n"
         "Answer:"
     )
 
+    current_key = os.getenv("GEMINI_API_KEY")
+    if not current_key:
+        return jsonify({"reply": "⚠️ AI service is not configured. Please set up the GEMINI_API_KEY."})
+
     try:
-        current_key = os.getenv("GEMINI_API_KEY")
-
-        if not current_key:
-            print("Gemini API key missing")
-            return jsonify({"error": "AI service error: API key missing"}), 500
-
-        # ✅ Use local client (no scope issues)
         local_client = genai.Client(api_key=current_key)
-
         reply = generate_gemini_text(local_client, prompt)
 
         if not reply:
-            print("Gemini API returned empty text response")
-            return jsonify({"reply": "Unable to generate a response. Please try again."})
+            return jsonify({"reply": "I couldn't generate a response. Please try rephrasing your question."})
 
         return jsonify({"reply": reply})
 
     except Exception as e:
         err_text = str(e)
-        print("Gemini API error:", err_text)
+        print("Chatbot error:", err_text)
 
-        # ✅ Better error detection
-        if any(x in err_text for x in [
-            "API_KEY_INVALID",
-            "INVALID_ARGUMENT",
-            "API key expired",
-            "API key not valid"
-        ]):
-            return jsonify({
-                "error": "AI service error: API key invalid or expired. Please update it."
-            }), 401
+        if "API Key not found" in err_text or "API_KEY_INVALID" in err_text:
+            return jsonify({"reply": "⚠️ API key is invalid. Please check your GEMINI_API_KEY in .env file."})
 
-        return jsonify({
-            "error": "AI service error: Unable to process request."
-        }), 500
-    
+        return jsonify({"reply": "⚠️ Something went wrong. Please try again later."})
 
 
 @app.route("/api/motivation-quote", methods=["POST"])
@@ -537,59 +550,10 @@ def motivation_quote():
     """
     Motivational quotes endpoint.
     Returns JSON: { "quote": "..." }
-    On any failure, returns a safe fallback quote (no hard error to the frontend).
+    Uses local quotes only — no API calls, to preserve quota for chatbot.
     """
-    data = request.get_json(silent=True) or {}
-    screen = (data.get("screen") or "").strip().lower()
-
-    fallback_quote = "Stay consistent. You're building something great."
-
-    # Map UI screen IDs to prompt-friendly descriptions.
-    # (The frontend caches per-screen, but the AI prompt uses these descriptions.)
-    screen_name_map = {
-        "dashboard": "general motivation",
-        "calendar": "planning and discipline",
-        "timer": "focus and deep work",
-        "tasks": "productivity and execution",
-        "history": "productivity and execution",
-        "ai": "general motivation",
-        "analytics": "productivity and execution",
-    }
-
-    screen_name = screen_name_map.get(screen, screen_name_map["dashboard"])
-
-    prompt = (
-        "Give me a short motivational quote for a student working on "
-        f"{screen_name}.\n"
-        "Keep it under 15 words. Make it powerful and unique.\n\n"
-        "Return only the quote text, with no surrounding quotes or extra commentary."
-    )
-
-    try:
-        current_key = os.getenv("GEMINI_API_KEY")
-        if not current_key:
-            return jsonify({"quote": fallback_quote, "fallback": True}), 200
-
-        local_client = genai.Client(api_key=current_key)
-        quote = generate_gemini_text(local_client, prompt).strip().strip('"').strip("'")
-
-        if not quote:
-            return jsonify({"quote": fallback_quote, "fallback": True}), 200
-
-        # Enforce the "under 15 words" requirement defensively.
-        words = quote.split()
-        if len(words) > 15:
-            quote = " ".join(words[:15]).strip()
-            # Keep punctuation natural if truncation cut mid-sentence.
-            if quote and quote[-1] not in ".!?":
-                quote = quote + "."
-
-        return jsonify({"quote": quote, "fallback": False}), 200
-
-    except Exception as e:
-        # Never crash the page due to AI issues.
-        print("Gemini quote error:", str(e))
-        return jsonify({"quote": fallback_quote, "fallback": True}), 200
+    quote = random.choice(LOCAL_QUOTES)
+    return jsonify({"quote": quote, "fallback": False}), 200
 
 
 if __name__ == "__main__":
