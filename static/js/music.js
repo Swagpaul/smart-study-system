@@ -104,7 +104,8 @@ class StudyMusic {
         
         this.audio.play().then(() => {
             this.isPlaying = true;
-            this.playPauseBtn.textContent = '⏸';
+            this.playPauseBtn.querySelector('.icon-play').style.display = 'none';
+            this.playPauseBtn.querySelector('.icon-pause').style.display = 'block';
             this.player.classList.add('playing');
             localStorage.setItem('study-music-playing', 'true');
             this.fadeIn();
@@ -117,7 +118,8 @@ class StudyMusic {
     pause() {
         this.audio.pause();
         this.isPlaying = false;
-        this.playPauseBtn.textContent = '▶';
+        this.playPauseBtn.querySelector('.icon-play').style.display = 'block';
+        this.playPauseBtn.querySelector('.icon-pause').style.display = 'none';
         this.player.classList.remove('playing');
         localStorage.setItem('study-music-playing', 'false');
         if (this.fadeInterval) clearInterval(this.fadeInterval);

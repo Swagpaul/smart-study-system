@@ -36,7 +36,7 @@ except Exception as e:
     print(f"Warning: Failed to initialize Gemini client: {e}")
     print("AI features will not work until API key is valid")
 
-# Model configuration - using latest Gemini 2.0 Flash model
+# Model configuration - using latest Gemini 3 Flash model
 GEMINI_MODEL = "gemini-3-flash-preview"
 
 # Secret key for sessions
@@ -47,6 +47,13 @@ base_dir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(base_dir, "planner.db")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# PDF Upload Configuration
+UPLOAD_FOLDER = os.path.join(base_dir, "static", "docs")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+MAX_DOCS_PER_USER = 10
+MAX_FILE_SIZE = 5 * 1024 * 1024 # 5 MB
 
 db = SQLAlchemy(app)
 
@@ -188,6 +195,13 @@ class ForestProgress(db.Model):
     last_decay_date = db.Column(db.String(20), nullable=True)
     bonus_dates = db.Column(db.Text, default="", nullable=False)
 
+
+class Document(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    display_name = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # routes
 
@@ -429,6 +443,90 @@ def delete_task(id):
     db.session.delete(task)
     db.session.commit()
     return jsonify({"message": "Task deleted"})
+
+
+# document api s
+
+@app.route("/get-docs", methods=["GET"])
+def get_docs():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    docs = Document.query.filter_by(user_id=session["user_id"]).order_by(Document.created_at.desc()).all()
+    return jsonify([
+        {
+            "id": doc.id,
+            "filename": doc.filename,
+            "display_name": doc.display_name,
+            "url": url_for("static", filename=f"docs/{doc.filename}")
+        } for doc in docs
+    ])
+
+@app.route("/upload-doc", methods=["POST"])
+def upload_doc():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+    display_name = request.form.get('display_name', '').strip()
+
+    if not file or file.filename == '':
+        return jsonify({"error": "Empty file"}), 400
+
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({"error": "Only PDF files are allowed"}), 400
+
+    if not display_name:
+        return jsonify({"error": "Display name is required"}), 400
+
+    file_bytes = file.read(MAX_FILE_SIZE + 1)
+    if len(file_bytes) > MAX_FILE_SIZE:
+        return jsonify({"error": "File size exceeds 5MB limit"}), 400
+    file.seek(0)
+
+    user_docs_count = Document.query.filter_by(user_id=session["user_id"]).count()
+    if user_docs_count >= MAX_DOCS_PER_USER:
+        return jsonify({"error": f"You can only upload up to {MAX_DOCS_PER_USER} documents"}), 400
+
+    import time
+    import werkzeug.utils
+    secure_name = werkzeug.utils.secure_filename(file.filename)
+    unique_filename = f"{session['user_id']}_{int(time.time())}_{secure_name}"
+    save_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
+
+    file.save(save_path)
+
+    new_doc = Document(
+        user_id=session["user_id"],
+        filename=unique_filename,
+        display_name=display_name
+    )
+    db.session.add(new_doc)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Document uploaded successfully"}), 201
+
+@app.route("/delete-doc/<int:id>", methods=["DELETE"])
+def delete_doc(id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    doc = Document.query.get(id)
+    if not doc or doc.user_id != session["user_id"]:
+        return jsonify({"error": "Document not found or unauthorized"}), 404
+
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], doc.filename)
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+        except Exception as e:
+            print("Error deleting file:", e)
+
+    db.session.delete(doc)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Document deleted"})
 
 def is_academic_question(message):
     """Simple study filter: check if question contains study-related keywords."""
