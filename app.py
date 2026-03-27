@@ -37,7 +37,7 @@ except Exception as e:
     print("AI features will not work until API key is valid")
 
 # Model configuration - using latest Gemini 2.0 Flash model
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-3-flash-preview"
 
 # Secret key for sessions
 app.config["SECRET_KEY"] = "supersecretkey"
