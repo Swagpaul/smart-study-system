@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Feedbacks - Smart Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="dashboard" style="min-height: 100vh; padding: 18px;">
+    <div class="main" style="padding: 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h1>Feedback Submissions</h1>
+            <a href="/" style="color:#3b82f6; text-decoration:none; font-weight:700;">Back to Dashboard</a>
+        </div>
+
+        <div class="glass-card" style="padding: 18px;">
+            <h2>Total feedback received: {{ feedbacks|length }}</h2>
+            {% if feedbacks %}
+                <div style="margin-top:16px; display:grid; gap:12px; max-height: 72vh; overflow:auto;">
+                    {% for fb in feedbacks %}
+                    <div class="glass-card" style="background: rgba(12, 27, 52, 0.86); border-color: rgba(63, 174, 255, 0.3); margin:0;">
+                        <p style="margin: 0 0 8px; color: var(--text-primary);">{{ fb.message }}</p>
+                        <small style="color: var(--text-secondary);">{{ fb.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No feedback entries yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+{% include 'feedback_widget.html' %}
+
+</body>
+</html>
