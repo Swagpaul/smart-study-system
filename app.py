@@ -51,16 +51,47 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
+def parse_bonus_dates(raw_value):
+    if not raw_value:
+        return set()
+    return {item for item in str(raw_value).split(",") if item}
+
+
+def serialize_bonus_dates(dates_set):
+    return ",".join(sorted(dates_set))
+
+
+def get_or_create_forest_progress(user_id):
+    progress = ForestProgress.query.filter_by(user_id=user_id).first()
+    if progress is None:
+        progress = ForestProgress(user_id=user_id, points=0, last_decay_date=None, bonus_dates="")
+        db.session.add(progress)
+        db.session.commit()
+    progress.points = max(0, int(progress.points or 0))
+    return progress
+
+
 def ensure_forest_points():
-    """Initialize and normalize hidden forest points in session."""
-    if "forest_points" not in session:
-        session["forest_points"] = 0
-    session["forest_points"] = max(0, int(session.get("forest_points", 0)))
+    """Ensure persistent forest progress exists for logged-in user."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return
+
+    progress = get_or_create_forest_progress(user_id)
+    # Mirror in session only for legacy compatibility with existing code paths.
+    session["forest_points"] = progress.points
 
 
 def adjust_forest_points(delta):
-    ensure_forest_points()
-    session["forest_points"] = max(0, session["forest_points"] + int(delta))
+    user_id = session.get("user_id")
+    if not user_id:
+        return 0
+
+    progress = get_or_create_forest_progress(user_id)
+    progress.points = max(0, int(progress.points or 0) + int(delta))
+    db.session.commit()
+    session["forest_points"] = progress.points
+    return progress.points
 
 
 def get_forest_stage(points):
@@ -150,6 +181,14 @@ class Feedback(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class ForestProgress(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    points = db.Column(db.Integer, default=0, nullable=False)
+    last_decay_date = db.Column(db.String(20), nullable=True)
+    bonus_dates = db.Column(db.Text, default="", nullable=False)
+
+
 # routes
 
 @app.route("/")
@@ -157,8 +196,9 @@ def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
+    progress = get_or_create_forest_progress(session["user_id"])
     today = datetime.now().strftime("%Y-%m-%d")
-    last_decay_date = session.get("forest_decay_date")
+    last_decay_date = progress.last_decay_date
 
     # Apply daily decay once per day when opening dashboard if any task remains incomplete.
     if last_decay_date != today:
@@ -170,7 +210,9 @@ def dashboard():
         if has_incomplete:
             adjust_forest_points(-15)
 
-        session["forest_decay_date"] = today
+        progress = get_or_create_forest_progress(session["user_id"])
+        progress.last_decay_date = today
+        db.session.commit()
 
     return render_template("dashboard.html")
 
@@ -187,7 +229,8 @@ def forest_data():
     if "user_id" not in session:
         return jsonify({"stage": "seed"})
 
-    points = session.get("forest_points", 0)
+    progress = get_or_create_forest_progress(session["user_id"])
+    points = progress.points
     stage = get_forest_stage(points)
     return jsonify({"stage": stage})
 
@@ -345,26 +388,34 @@ def update_task(id):
     elif was_completed and not is_completed:
         adjust_forest_points(-15)
 
+    progress = get_or_create_forest_progress(session["user_id"])
+
     # Optional bonus: all tasks for the date are completed.
     if task.date:
         tasks_for_date = Task.query.filter_by(
             user_id=session["user_id"],
             date=task.date
         ).all()
+        bonus_dates = parse_bonus_dates(progress.bonus_dates)
         if tasks_for_date and all(t.completed for t in tasks_for_date):
-            bonus_key = f"forest_bonus_{task.date}"
-            if not session.get(bonus_key, False):
+            if task.date not in bonus_dates:
                 adjust_forest_points(+20)
-                session[bonus_key] = True
+                progress = get_or_create_forest_progress(session["user_id"])
+                bonus_dates = parse_bonus_dates(progress.bonus_dates)
+                bonus_dates.add(task.date)
+                progress.bonus_dates = serialize_bonus_dates(bonus_dates)
+                db.session.commit()
         else:
             # Allow earning the bonus later if tasks become complete again.
-            bonus_key = f"forest_bonus_{task.date}"
-            session[bonus_key] = False
+            if task.date in bonus_dates:
+                bonus_dates.remove(task.date)
+                progress.bonus_dates = serialize_bonus_dates(bonus_dates)
+                db.session.commit()
 
     db.session.commit()
     return jsonify({
         "success": True,
-        "new_stage": get_forest_stage(session.get("forest_points", 0))
+        "new_stage": get_forest_stage(get_or_create_forest_progress(session["user_id"]).points)
     })
 
 
