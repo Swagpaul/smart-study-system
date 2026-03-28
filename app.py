@@ -5,7 +5,8 @@ from datetime import datetime
 import hashlib
 import os
 from dotenv import load_dotenv
-from google import genai
+# from google import genai
+import google.generativeai as genai
 
 load_dotenv()  # load .env from project root
 
@@ -16,7 +17,9 @@ CORS(app)
 # Gemini AI Configuration (google-genai)
 # ============================================
 # Load API key from environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+GEMINI_API_KEY = "AIzaSyCinY1Pg-WcBsPA-NEu0eRQUJgRIUVjKUI"
 
 # Avoid logging the raw API key (security).
 print("Loaded API Key:", "present" if GEMINI_API_KEY else "missing")
@@ -30,14 +33,16 @@ if not GEMINI_API_KEY:
 
 # Initialize Gemini client with latest SDK (google-genai)
 # This replaces the deprecated google.generativeai package
-try:
-    client = genai.Client(api_key=GEMINI_API_KEY)
-except Exception as e:
-    print(f"Warning: Failed to initialize Gemini client: {e}")
-    print("AI features will not work until API key is valid")
+# try:
+#     client = genai.Client(api_key=GEMINI_API_KEY)
+# except Exception as e:
+#     print(f"Warning: Failed to initialize Gemini client: {e}")
+#     print("AI features will not work until API key is valid")
 
-# Model configuration - using latest Gemini 3 Flash model
-GEMINI_MODEL = "gemini-3-flash-preview"
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Model configuration
+GEMINI_MODEL = "gemini-2.5-flash"
 
 # Secret key for sessions
 app.config["SECRET_KEY"] = "supersecretkey"
@@ -146,22 +151,38 @@ def extract_gemini_text(response):
     return ""
 
 
-def generate_gemini_text(local_client, prompt):
-    """
-    Compatibility wrapper for Gemini SDK variants:
-    - client.responses.create(...)
-    - client.models.generate_content(...)
-    """
-    if hasattr(local_client, "responses"):
-        response = local_client.responses.create(model=GEMINI_MODEL, input=prompt)
-        return extract_gemini_text(response)
+# def generate_gemini_text(local_client, prompt):
+#     """
+#     Compatibility wrapper for Gemini SDK variants:
+#     - client.responses.create(...)
+#     - client.models.generate_content(...)
+#     """
+#     if hasattr(local_client, "responses"):
+#         response = local_client.responses.create(model=GEMINI_MODEL, input=prompt)
+#         return extract_gemini_text(response)
 
-    if hasattr(local_client, "models"):
-        response = local_client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-        return extract_gemini_text(response)
+#     if hasattr(local_client, "models"):
+#         response = local_client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+#         return extract_gemini_text(response)
 
-    raise RuntimeError("Unsupported Gemini SDK: neither responses nor models API available")
+#     raise RuntimeError("Unsupported Gemini SDK: neither responses nor models API available")
 
+
+def generate_gemini_text(prompt):
+    try:
+        import google.generativeai as genai
+
+        genai.configure(api_key=GEMINI_API_KEY)
+
+        model = genai.GenerativeModel(GEMINI_MODEL)
+
+        response = model.generate_content(prompt)
+
+        return response.text if response.text else ""
+
+    except Exception as e:
+        print("Gemini error:", str(e))
+        return ""
 
 # models
 
@@ -572,7 +593,6 @@ def is_academic_question(message):
 
 
 @app.route("/api/ask-ai", methods=["POST"])
-@app.route("/api/ask-ai", methods=["POST"])
 def ask_ai():
     """AI assistant route: process study questions using Gemini."""
     data = request.get_json(silent=True) or {}
@@ -599,9 +619,11 @@ def ask_ai():
             return jsonify({"error": "AI service error: API key missing"}), 500
 
         # ✅ Use local client (no scope issues)
-        local_client = genai.Client(api_key=current_key)
+        # local_client = genai.Client(api_key=current_key)
 
-        reply = generate_gemini_text(local_client, prompt)
+        # reply = generate_gemini_text(local_client, prompt)
+
+        reply = generate_gemini_text(prompt)
 
         if not reply:
             print("Gemini API returned empty text response")
@@ -629,6 +651,103 @@ def ask_ai():
         }), 500
     
 
+
+@app.route("/get_suggestion", methods=["POST"])
+def get_suggestion():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+    energy_level = data.get("energy_level", "medium")
+    extra_tasks = data.get("extra_tasks", [])
+
+    # Filter out empty or generic default tasks like "New Task"
+    invalid_names = {"", "new task", "untitled task", "untitled", "task"}
+    
+    db_tasks = Task.query.filter_by(user_id=session["user_id"], completed=False).all()
+    valid_db_tasks = [t.title.strip() for t in db_tasks if t.title and t.title.strip().lower() not in invalid_names]
+    
+    valid_extra_tasks = [t.strip() for t in extra_tasks if t and t.strip().lower() not in invalid_names]
+    
+    all_tasks = valid_db_tasks + valid_extra_tasks
+
+    if not all_tasks:
+        return jsonify({
+            "best_task": "No tasks!",
+            "reason": "You have no pending tasks. Take a break!",
+            "ordered_tasks": []
+        })
+
+    # Get Time of Day
+    hour = datetime.now().hour
+    if 5 <= hour < 12:
+        time_of_day = "Morning"
+    elif 12 <= hour < 17:
+        time_of_day = "Afternoon"
+    elif 17 <= hour < 22:
+        time_of_day = "Evening"
+    else:
+        time_of_day = "Night"
+
+    # Contextual priority
+    task_hints = []
+    for t in all_tasks:
+        t_lower = t.lower()
+        hint = "normal priority"
+        if any(kw in t_lower for kw in ["assignment", "project", "exam"]):
+            hint = "high priority"
+        elif any(kw in t_lower for kw in ["revision", "notes"]):
+            hint = "medium priority"
+        elif any(kw in t_lower for kw in ["reading", "watch"]):
+            hint = "low priority"
+        task_hints.append(f"- {t} ({hint})")
+
+    tasks_string = "\n".join(task_hints)
+
+    prompt = f"""You are a productivity expert AI.
+
+User details:
+- Energy Level: {energy_level}
+- Time of Day: {time_of_day}
+
+Tasks:
+{tasks_string}
+
+Instructions:
+1. Suggest the BEST task to do first from the list provided.
+2. Reorder all tasks for optimal productivity.
+3. Consider:
+   - High energy → difficult tasks
+   - Low energy → easy/light tasks
+   - Time of day relevance
+   - Priorities given in the tasks hints
+4. Give a short explanation.
+5. Return ONLY a pure JSON object in the exact format shown below, with no markdown formatting or backticks:
+{{
+    "best_task": "task name",
+    "reason": "explanation",
+    "ordered_tasks": ["task1", "task2", "task3"]
+}}
+"""
+    try:
+        reply = generate_gemini_text(prompt)
+        import json
+        import re
+        
+        reply_clean = reply.strip()
+        match = re.search(r'```(?:json)?\s*(.*?)\s*```', reply_clean, re.DOTALL)
+        if match:
+            reply_clean = match.group(1).strip()
+            
+        parsed = json.loads(reply_clean)
+        return jsonify(parsed)
+    except Exception as e:
+        print("Suggestion AI Error:", e)
+        return jsonify({
+            "best_task": all_tasks[0] if all_tasks else "",
+            "reason": "Could not fetch AI suggestion. Start with your first task.",
+            "ordered_tasks": all_tasks
+        }), 200
 
 @app.route("/api/motivation-quote", methods=["POST"])
 def motivation_quote():
@@ -668,8 +787,10 @@ def motivation_quote():
         if not current_key:
             return jsonify({"quote": fallback_quote, "fallback": True}), 200
 
-        local_client = genai.Client(api_key=current_key)
-        quote = generate_gemini_text(local_client, prompt).strip().strip('"').strip("'")
+        # local_client = genai.Client(api_key=current_key)
+        # quote = generate_gemini_text(local_client, prompt).strip().strip('"').strip("'")
+
+        quote = generate_gemini_text(prompt)
 
         if not quote:
             return jsonify({"quote": fallback_quote, "fallback": True}), 200
@@ -688,6 +809,145 @@ def motivation_quote():
         # Never crash the page due to AI issues.
         print("Gemini quote error:", str(e))
         return jsonify({"quote": fallback_quote, "fallback": True}), 200
+
+
+@app.route("/get_analytics", methods=["GET"])
+def get_analytics():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user_id = session["user_id"]
+    from datetime import datetime, timedelta
+    
+    today = datetime.now()
+    dates = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(6, -1, -1)]
+    
+    graph_data = []
+    
+    skipped_tasks_freq = {}
+    time_productivity = {"Morning": 0, "Afternoon": 0, "Evening": 0, "Night": 0}
+    task_type_freq = {} 
+    
+    recent_tasks = Task.query.filter(Task.user_id == user_id, Task.date.in_(dates)).all()
+    
+    tasks_by_date = {d: [] for d in dates}
+    for t in recent_tasks:
+        tasks_by_date[t.date].append(t)
+        
+    total_completed = 0
+    total_tasks_all = len(recent_tasks)
+    
+    for date in dates:
+        day_tasks = tasks_by_date[date]
+        total = len(day_tasks)
+        completed = sum(1 for t in day_tasks if t.completed)
+        total_completed += completed
+        
+        comp_pct = (completed / total * 100) if total > 0 else 0
+        graph_data.append({"date": date, "completion": round(comp_pct, 2)})
+        
+        for t in day_tasks:
+            created_hour = t.created_at.hour if t.created_at else 12
+            if 5 <= created_hour < 12: bucket = "Morning"
+            elif 12 <= created_hour < 17: bucket = "Afternoon"
+            elif 17 <= created_hour < 22: bucket = "Evening"
+            else: bucket = "Night"
+            
+            t_lower = t.title.lower() if t.title else ""
+            if any(kw in t_lower for kw in ["assignment", "hw", "homework", "project", "task"]): t_type = "Assignments"
+            elif any(kw in t_lower for kw in ["revision", "revise", "read", "notes", "study"]): t_type = "Revision"
+            elif any(kw in t_lower for kw in ["exam", "test", "quiz"]): t_type = "Exams"
+            else: t_type = "General"
+            
+            if not t.completed:
+                if t.title:
+                    skipped_tasks_freq[t.title] = skipped_tasks_freq.get(t.title, 0) + 1
+                task_type_freq[t_type] = task_type_freq.get(t_type, 0) + 1
+            else:
+                time_productivity[bucket] += 1
+                
+    sorted_skipped = sorted(skipped_tasks_freq.items(), key=lambda x: x[1], reverse=True)
+    top_skipped = [k for k, v in sorted_skipped[:3]] if sorted_skipped else []
+    
+    sorted_ignored_types = sorted(task_type_freq.items(), key=lambda x: x[1], reverse=True)
+    most_ignored_type = sorted_ignored_types[0][0] if sorted_ignored_types else "None"
+    
+    best_time_tuple = max(time_productivity.items(), key=lambda x: x[1])
+    most_productive_time = best_time_tuple[0] if best_time_tuple[1] > 0 else "N/A"
+    
+    overall_avg = sum(d["completion"] for d in graph_data) / len(graph_data) if graph_data else 0
+    if overall_avg >= 80: badge = "Elite"
+    elif overall_avg >= 60: badge = "Consistent"
+    elif overall_avg >= 40: badge = "Improving"
+    else: badge = "Needs Focus"
+    
+    if len(graph_data) >= 2:
+        try:
+            recent = graph_data[-1]["completion"] + graph_data[-2]["completion"]
+            older = graph_data[0]["completion"] + graph_data[1]["completion"]
+            if recent > older + 10: trend = "Improving"
+            elif recent < older - 10: trend = "Declining"
+            else: trend = "Fluctuating"
+        except:
+             trend = "Fluctuating"
+    else:
+        trend = "Stable"
+    
+    prompt = f"""You are a productivity analyst AI.
+User study data (last 7 days completion %, in order): {graph_data}
+Frequently skipped tasks: {top_skipped}
+Time productivity patterns (completed tasks by time): {time_productivity}
+
+Your job:
+1. Analyze behavior patterns
+2. Identify weaknesses
+3. Detect: procrastination trends, low productivity times, consistency issues
+4. Suggest improvements
+
+Return strictly a JSON object:
+{{
+  "insights": "Short paragraph analyzing behavior...",
+  "weaknesses": ["weakness 1", "weakness 2"],
+  "suggestions": ["suggestion 1", "suggestion 2"],
+  "best_study_time": "{most_productive_time}",
+  "consistency_score": "{round(overall_avg)}/100"
+}}"""
+
+    import json
+    import re
+    
+    try:
+        if total_tasks_all == 0:
+             raise ValueError("No task data")
+        reply = generate_gemini_text(prompt)
+        reply_clean = reply.strip()
+        match = re.search(r'```(?:json)?\s*(.*?)\s*```', reply_clean, re.DOTALL)
+        if match:
+             reply_clean = match.group(1).strip()
+        ai_analysis = json.loads(reply_clean)
+    except Exception as e:
+        print("Analytics Gemini Error:", e)
+        extra_info = "Not enough data yet. Start completing tasks!" if total_tasks_all == 0 else "We couldn't generate AI insights at the moment due to an API error."
+        ai_analysis = {
+            "insights": extra_info,
+            "weaknesses": ["Not enough data" if total_tasks_all == 0 else "Analysis temporarily unavailable"],
+            "suggestions": ["Keep logging tasks regularly to get smart suggestions."],
+            "best_study_time": most_productive_time,
+            "consistency_score": f"{round(overall_avg)}/100"
+        }
+        
+    return jsonify({
+        "graph_data": graph_data,
+        "ai_analysis": ai_analysis,
+        "extra_analytics": {
+            "productivity_trend": trend,
+            "most_productive_time_block": most_productive_time,
+            "most_ignored_task_type": most_ignored_type,
+            "completion_consistency_indicator": round(overall_avg),
+            "weekly_score_badge": badge
+        },
+        "total_tasks_all": total_tasks_all
+    })
 
 
 if __name__ == "__main__":

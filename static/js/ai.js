@@ -13,31 +13,35 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
+    function formatText(text) {
+        // Basic Markdown-like formatting to HTML
+        let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        formatted = formatted.replace(/\n/g, '<br>');
+        return formatted;
+    }
+
     function appendMessage(text, sender) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "chat-message-wrapper " + sender;
+        
+        const bubble = document.createElement("div");
+        bubble.className = "chat-bubble " + sender;
+        
+        const content = document.createElement("div");
+        content.className = "chat-content";
+        content.innerHTML = formatText(text);
 
-        const div = document.createElement("div");
-        div.style.marginBottom = "10px";
-        div.style.padding = "8px 12px";
-        div.style.borderRadius = "10px";
-        div.style.maxWidth = "82%";
+        const time = document.createElement("div");
+        time.className = "chat-time";
+        const now = new Date();
+        time.innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
 
-        if (sender === "user") {
-            div.style.marginLeft = "18%";
-            div.style.marginRight = "0";
-            div.style.background = "rgba(34, 197, 94, 0.14)";
-            div.style.color = "#f8fffa";
-            div.style.textAlign = "right";
-            div.innerHTML = "<strong>You:</strong> " + text;
-        } else {
-            div.style.marginRight = "18%";
-            div.style.marginLeft = "0";
-            div.style.background = "rgba(59, 130, 246, 0.2)";
-            div.style.color = "#e2edff";
-            div.style.textAlign = "left";
-            div.innerHTML = "<strong>AI:</strong> " + text;
-        }
+        bubble.appendChild(content);
+        bubble.appendChild(time);
+        wrapper.appendChild(bubble);
 
-        chatBox.appendChild(div);
+        chatBox.appendChild(wrapper);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 

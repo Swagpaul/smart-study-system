@@ -50,7 +50,7 @@ sideSectionItems.forEach((item) => {
 
 // initial state
 if (sideItems.length) {
-    const allowedSections = new Set(["calendar", "timer", "history", "ai", "analytics"]);
+    const allowedSections = new Set(["calendar", "timer", "history", "ai", "analytics", "docs", "suggest"]);
     const requestedSection = new URLSearchParams(window.location.search).get("section");
     const initialSection = allowedSections.has(requestedSection) ? requestedSection : "calendar";
 
