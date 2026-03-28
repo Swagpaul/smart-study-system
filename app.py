@@ -17,9 +17,7 @@ CORS(app)
 # Gemini AI Configuration (google-genai)
 # ============================================
 # Load API key from environment variable
-# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-GEMINI_API_KEY = "AIzaSyCinY1Pg-WcBsPA-NEu0eRQUJgRIUVjKUI"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Avoid logging the raw API key (security).
 print("Loaded API Key:", "present" if GEMINI_API_KEY else "missing")
@@ -224,6 +222,29 @@ class Document(db.Model):
     display_name = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class DailyCompletion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    date = db.Column(db.String(20), nullable=False)
+    completion_percentage = db.Column(db.Float, default=0.0)
+
+def update_daily_completion_sync(user_id, date_str):
+    if not date_str:
+        return
+    from sqlalchemy import func
+    tasks = Task.query.filter_by(user_id=user_id, date=date_str).all()
+    total = len(tasks)
+    completed = sum(1 for t in tasks if t.completed)
+    pct = (completed / total * 100) if total > 0 else 0.0
+    
+    dc = DailyCompletion.query.filter_by(user_id=user_id, date=date_str).first()
+    if not dc:
+        dc = DailyCompletion(user_id=user_id, date=date_str, completion_percentage=pct)
+        db.session.add(dc)
+    else:
+        dc.completion_percentage = pct
+    db.session.commit()
+
 # routes
 
 @app.route("/")
@@ -390,12 +411,14 @@ def add_task():
     db.session.add(new_task)
     db.session.commit()
 
+    update_daily_completion_sync(session["user_id"], new_task.date)
+
     return jsonify({"message": "Task added"})
 
 
 @app.route("/tasks/<int:id>", methods=["PUT"])
 def update_task(id):
-    task = Task.query.get(id)
+    task = db.session.get(Task, id)
     data = request.json
 
     if not task:
@@ -448,6 +471,7 @@ def update_task(id):
                 db.session.commit()
 
     db.session.commit()
+    update_daily_completion_sync(session["user_id"], task.date)
     return jsonify({
         "success": True,
         "new_stage": get_forest_stage(get_or_create_forest_progress(session["user_id"]).points)
@@ -456,13 +480,15 @@ def update_task(id):
 
 @app.route("/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
-    task = Task.query.get(id)
+    task = db.session.get(Task, id)
 
     if task.user_id != session.get("user_id"):
         return jsonify({"error": "Unauthorized"}), 403
 
+    task_date = task.date
     db.session.delete(task)
     db.session.commit()
+    update_daily_completion_sync(session["user_id"], task_date)
     return jsonify({"message": "Task deleted"})
 
 
@@ -534,7 +560,7 @@ def delete_doc(id):
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    doc = Document.query.get(id)
+    doc = db.session.get(Document, id)
     if not doc or doc.user_id != session["user_id"]:
         return jsonify({"error": "Document not found or unauthorized"}), 404
 
@@ -843,7 +869,12 @@ def get_analytics():
         completed = sum(1 for t in day_tasks if t.completed)
         total_completed += completed
         
-        comp_pct = (completed / total * 100) if total > 0 else 0
+        dc = DailyCompletion.query.filter_by(user_id=user_id, date=date).first()
+        if dc:
+            comp_pct = dc.completion_percentage
+        else:
+            comp_pct = (completed / total * 100) if total > 0 else 0
+            
         graph_data.append({"date": date, "completion": round(comp_pct, 2)})
         
         for t in day_tasks:
@@ -920,6 +951,10 @@ Return strictly a JSON object:
         if total_tasks_all == 0:
              raise ValueError("No task data")
         reply = generate_gemini_text(prompt)
+        
+        if not reply:
+             raise ValueError("Empty response from Gemini API (possibly due to invalid or leaked API key).")
+             
         reply_clean = reply.strip()
         match = re.search(r'```(?:json)?\s*(.*?)\s*```', reply_clean, re.DOTALL)
         if match:
