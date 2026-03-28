@@ -230,3 +230,26 @@ body.is-dragging .pdf-body {
     right: 10px;
     transform-origin: right center;
 }
+
+/* Reposition elements when snapped left/right so they aren't covered by PDF */
+
+body.pdf-snapped-left .bottom-menu {
+    left: calc(50vw + 48px + (var(--pdf-width) / 2));
+}
+
+body.pdf-snapped-right .bottom-menu {
+    left: calc(50vw + 48px - (var(--pdf-width) / 2));
+}
+
+body.pdf-snapped-right #music-player {
+    right: calc(24px + var(--pdf-width));
+}
+
+body.pdf-snapped-right .theme-toggle {
+    right: calc(30px + var(--pdf-width));
+}
+
+body.pdf-snapped-right .feedback-floating {
+    right: calc(24px + var(--pdf-width));
+}
+
