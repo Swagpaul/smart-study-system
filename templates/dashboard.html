@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Smart Planner</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -7,442 +8,490 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
-<!-- Theme Toggle Button -->
-<button class="theme-toggle" id="theme-toggle" title="Toggle Light/Dark Mode">🌙</button>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="theme-toggle" title="Toggle Light/Dark Mode">🌙</button>
 
-<div class="dashboard">
+    <div class="dashboard">
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="logo">SP</div>
-        
-        <div class="nav-item stylish-btn calendar-btn active" data-section="calendar" title="Calendar" aria-label="Calendar">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        </div>
-        
-        <div class="nav-item stylish-btn docs-btn" data-section="docs" title="Documents" aria-label="Documents">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-        </div>
-        
-        <a href="/forest" class="nav-item stylish-btn forest-btn forest-link" title="Focus Forest" aria-label="Focus Forest">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22v-6"></path><path d="M5.5 16h13l-4-5h3l-5-6-5 6h3l-4 5z"></path></svg>
-        </a>
-    </div>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">SP</div>
 
-    <!-- Main Content -->
-    <div class="main">
-
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h1>Smart Productivity Dashboard</h1>
-            <a href="/logout" style="color:#3b82f6; text-decoration:none;">Logout</a>
-        </div>
-
-        <!-- ================= MOTIVATIONAL QUOTE ================= -->
-        <div id="quote-box" aria-live="polite">
-            <p id="quote-text">Loading motivation...</p>
-        </div>
-
-        <!-- ================= TIMER SECTION ================= -->
-        <div id="section-timer" class="section active-section">
-
-            <!-- Focus Timer -->
-            <div class="glass-card">
-                <h2>Focus Timer</h2>
-
-                <div class="timer-container">
-
-                    <svg class="progress-ring" width="220" height="220">
-                        <circle
-                            class="progress-ring-bg"
-                            stroke="#334155"
-                            stroke-width="12"
-                            fill="transparent"
-                            r="100"
-                            cx="110"
-                            cy="110"/>
-                        <circle
-                            class="progress-ring-circle"
-                            stroke="#22c55e"
-                            stroke-width="12"
-                            fill="transparent"
-                            r="100"
-                            cx="110"
-                            cy="110"/>
-                    </svg>
-
-                    <div class="timer-display">
-                        <span id="time-left">25:00</span>
-                    </div>
-
-                </div>
-
-                <div class="timer-controls">
-                    <input type="number" id="minutes-input" placeholder="Minutes" min="1">
-                    <button id="start-timer">Start</button>
-                    <button id="pause-timer">Pause</button>
-                    <button id="reset-timer">Reset</button>
-                </div>
+            <div class="nav-item stylish-btn calendar-btn active" data-section="calendar" title="Calendar"
+                aria-label="Calendar">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
             </div>
 
-            <!-- Daily Completion -->
-            <div class="glass-card">
-                <h2>Daily Completion</h2>
-                <div class="progress-bar">
-                    <div id="progress-fill"></div>
-                </div>
-                <p id="progress-text">0%</p>
+            <div class="nav-item stylish-btn docs-btn" data-section="docs" title="Documents" aria-label="Documents">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
             </div>
 
-            <!-- Task Manager -->
-            <div class="glass-card">
-                <h2>Top Priority Tasks</h2>
-                <button id="add-task-btn">Add Task</button>
-                <div id="task-container"></div>
-            </div>
-
+            <a href="/forest" class="nav-item stylish-btn forest-btn forest-link" title="Focus Forest"
+                aria-label="Focus Forest">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 22v-6"></path>
+                    <path d="M5.5 16h13l-4-5h3l-5-6-5 6h3l-4 5z"></path>
+                </svg>
+            </a>
         </div>
 
-        <!-- ================= HISTORY SECTION ================= -->
-        <div id="section-history" class="section">
-            <div class="glass-card">
-                <h2>History (Last 7 Days)</h2>
-                <div id="history-container">
+        <!-- Main Content -->
+        <div class="main">
 
-                    <div id="history-dates" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;"></div>
-
-                    <div class="glass-card" style="margin-bottom:20px;">
-                        <h3 id="history-date-title">Select a Date</h3>
-                        <div class="progress-bar">
-                            <div id="history-progress-fill"></div>
-                        </div>
-                        <p id="history-progress-text">0%</p>
-                    </div>
-
-                    <div id="history-tasks"></div>
-
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= CALENDAR + NOTES SECTION ================= -->
-        <div id="section-calendar" class="section">
-            <div class="glass-card" id="calendar-board">
-                <div class="calendar-header">
-                    <button id="calendar-prev">◀</button>
-                    <h2 id="calendar-month-year">March 2026</h2>
-                    <button id="calendar-next">▶</button>
-                </div>
-                <div class="calendar-grid" id="calendar-grid"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1>Smart Productivity Dashboard</h1>
+                <a href="/logout" style="color:#3b82f6; text-decoration:none;">Logout</a>
             </div>
 
-            <div class="glass-card" id="notes-board">
-                <div class="notes-header">
-                    <h3 id="notes-title">Select a date to view notes</h3>
-                    <p id="notes-count"></p>
-                </div>
-
-                <div class="notes-tabs">
-                    <button class="filter-btn active" data-filter="all">All</button>
-                    <button class="filter-btn" data-filter="important">Important</button>
-                    <button class="filter-btn" data-filter="completed">Completed</button>
-                </div>
-
-                <form id="note-form" class="note-form">
-                    <input type="text" id="note-title" placeholder="Title (optional)">
-                    <textarea id="note-desc" rows="3" placeholder="Description"></textarea>
-                    <input type="time" id="note-time">
-                    <label><input type="checkbox" id="note-important"> Mark as Important ⭐</label>
-                    <button type="submit" id="note-submit">Add Note</button>
-                </form>
-
-                <div class="upcoming-section">
-                    <h4>Upcoming Tasks (next 3 days)</h4>
-                    <div id="upcoming-list"></div>
-                </div>
-
-                <div id="notes-list"></div>
+            <!-- ================= MOTIVATIONAL QUOTE ================= -->
+            <div id="quote-box" aria-live="polite">
+                <p id="quote-text">Loading motivation...</p>
             </div>
-        </div>
 
-        <!-- ================= AI SECTION ================= -->
-        <div id="section-ai" class="section">
+            <!-- ================= TIMER SECTION ================= -->
+            <div id="section-timer" class="section active-section">
 
-            <div class="glass-card">
-                <h2>Study AI Assistant</h2>
+                <!-- Focus Timer -->
+                <div class="glass-card">
+                    <h2>Focus Timer</h2>
 
-                <div id="chat-box" class="chat-box-whatsapp">
-                </div>
+                    <div class="timer-container">
 
-                <div class="chat-input-container">
-                    <input type="text" id="chat-input" placeholder="Message" autocomplete="off">
-                    <button id="send-btn" title="Send">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="currentColor">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        <svg class="progress-ring" width="220" height="220">
+                            <circle class="progress-ring-bg" stroke="#334155" stroke-width="12" fill="transparent"
+                                r="100" cx="110" cy="110" />
+                            <circle class="progress-ring-circle" stroke="#22c55e" stroke-width="12" fill="transparent"
+                                r="100" cx="110" cy="110" />
                         </svg>
-                    </button>
+
+                        <div class="timer-display">
+                            <span id="time-left">25:00</span>
+                        </div>
+
+                    </div>
+
+                    <div class="timer-controls">
+                        <input type="number" id="minutes-input" placeholder="Minutes" min="1">
+                        <button id="start-timer">Start</button>
+                        <button id="pause-timer">Pause</button>
+                        <button id="reset-timer">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Daily Completion -->
+                <div class="glass-card">
+                    <h2>Daily Completion</h2>
+                    <div class="progress-bar">
+                        <div id="progress-fill"></div>
+                    </div>
+                    <p id="progress-text">0%</p>
+                </div>
+
+                <!-- Task Manager -->
+                <div class="glass-card">
+                    <h2>Top Priority Tasks</h2>
+                    <button id="add-task-btn">Add Task</button>
+                    <div id="task-container"></div>
                 </div>
 
             </div>
 
-        </div>
+            <!-- ================= HISTORY SECTION ================= -->
+            <div id="section-history" class="section">
+                <div class="glass-card">
+                    <h2>History (Last 7 Days)</h2>
+                    <div id="history-container">
 
-        <!-- ================= ANALYTICS SECTION ================= -->
-        <div id="section-analytics" class="section">
-            <div class="glass-card" style="margin-bottom: 20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2>Smart Analytics Engine</h2>
-                    <div id="weekly-badge-container" class="badge-elite" style="display: none; padding: 5px 15px; border-radius: 20px; font-weight: bold;">Score</div>
+                        <div id="history-dates" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+                        </div>
+
+                        <div class="glass-card" style="margin-bottom:20px;">
+                            <h3 id="history-date-title">Select a Date</h3>
+                            <div class="progress-bar">
+                                <div id="history-progress-fill"></div>
+                            </div>
+                            <p id="history-progress-text">0%</p>
+                        </div>
+
+                        <div id="history-tasks"></div>
+
+                    </div>
                 </div>
             </div>
 
-            <div id="analytics-layout" style="display: none;">
-                <!-- SECTION A: GRAPH -->
-                <div class="glass-card analytics-chart-card fade-in">
-                    <h3>7-Day Completion Trend</h3>
-                    <div class="chart-container" style="position: relative; height:300px; width:100%">
-                        <canvas id="analytics-chart"></canvas>
+            <!-- ================= CALENDAR + NOTES SECTION ================= -->
+            <div id="section-calendar" class="section">
+                <div class="glass-card" id="calendar-board">
+                    <div class="calendar-header">
+                        <button id="calendar-prev">◀</button>
+                        <h2 id="calendar-month-year">March 2026</h2>
+                        <button id="calendar-next">▶</button>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid"></div>
+                </div>
+
+                <div class="glass-card" id="notes-board">
+                    <div class="notes-header">
+                        <h3 id="notes-title">Select a date to view notes</h3>
+                        <p id="notes-count"></p>
+                    </div>
+
+                    <div class="notes-tabs">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="important">Important</button>
+                        <button class="filter-btn" data-filter="completed">Completed</button>
+                    </div>
+
+                    <form id="note-form" class="note-form">
+                        <input type="text" id="note-title" placeholder="Title (optional)">
+                        <textarea id="note-desc" rows="3" placeholder="Description"></textarea>
+                        <input type="time" id="note-time">
+                        <label><input type="checkbox" id="note-important"> Mark as Important ⭐</label>
+                        <button type="submit" id="note-submit">Add Note</button>
+                    </form>
+
+                    <div class="upcoming-section">
+                        <h4>Upcoming Tasks (next 3 days)</h4>
+                        <div id="upcoming-list"></div>
+                    </div>
+
+                    <div id="notes-list"></div>
+                </div>
+            </div>
+
+            <!-- ================= AI SECTION ================= -->
+            <div id="section-ai" class="section">
+
+                <div class="glass-card">
+                    <h2>Study AI Assistant</h2>
+
+                    <div id="chat-box" class="chat-box-whatsapp">
+                    </div>
+
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Message" autocomplete="off">
+                        <button id="send-btn" title="Send">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ================= ANALYTICS SECTION ================= -->
+            <div id="section-analytics" class="section">
+                <div class="glass-card" style="margin-bottom: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h2>Smart Analytics Engine</h2>
+                        <div id="weekly-badge-container" class="badge-elite"
+                            style="display: none; padding: 5px 15px; border-radius: 20px; font-weight: bold;">Score
+                        </div>
                     </div>
                 </div>
 
-                <!-- SECTION E: EXTRA ANALYTICS (Overview Stats) -->
-                <div class="analytics-stats-grid fade-in" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
-                    <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
-                        <span class="stat-icon" style="font-size: 2rem;">🔥</span>
-                        <div class="stat-info">
-                            <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Trend</h4>
-                            <p id="stat-trend" style="margin:5px 0 0; font-size: 1.2rem; font-weight:600;">--</p>
+                <div id="analytics-layout" style="display: none;">
+                    <!-- SECTION A: GRAPH -->
+                    <div class="glass-card analytics-chart-card fade-in">
+                        <h3>7-Day Completion Trend</h3>
+                        <div class="chart-container" style="position: relative; height:300px; width:100%">
+                            <canvas id="analytics-chart"></canvas>
                         </div>
                     </div>
-                    <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
-                        <span class="stat-icon" style="font-size: 2rem;">⏱</span>
-                        <div class="stat-info">
-                            <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Best Time</h4>
-                            <p id="stat-time" style="margin:5px 0 0; font-size: 1.2rem; font-weight:600;">--</p>
+
+                    <!-- SECTION E: EXTRA ANALYTICS (Overview Stats) -->
+                    <div class="analytics-stats-grid fade-in"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
+                            <span class="stat-icon" style="font-size: 2rem;">🔥</span>
+                            <div class="stat-info">
+                                <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Trend</h4>
+                                <p id="stat-trend" style="margin:5px 0 0; font-size: 1.2rem; font-weight:600;">--</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
-                        <span class="stat-icon" style="font-size: 2rem;">📉</span>
-                        <div class="stat-info">
-                            <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Ignored Type</h4>
-                            <p id="stat-ignored" style="margin:5px 0 0; font-size: 1.2rem; font-weight:600;">--</p>
+                        <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
+                            <span class="stat-icon" style="font-size: 2rem;">⏱</span>
+                            <div class="stat-info">
+                                <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Best Time</h4>
+                                <p id="stat-time" style="margin:5px 0 0; font-size: 1.2rem; font-weight:600;">--</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
-                        <span class="stat-icon" style="font-size: 2rem;">📊</span>
-                        <div class="stat-info">
-                            <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Consistency</h4>
-                            <div class="progress-bar" style="margin-top:5px; height: 8px;">
-                                <div id="stat-consistency-fill" style="width: 0%; transition: width 1s ease-in-out;"></div>
+                        <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
+                            <span class="stat-icon" style="font-size: 2rem;">📉</span>
+                            <div class="stat-info">
+                                <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Ignored Type</h4>
+                                <p id="stat-ignored" style="margin:5px 0 0; font-size: 1.2rem; font-weight:600;">--</p>
+                            </div>
+                        </div>
+                        <div class="glass-card stat-box" style="display:flex; align-items:center; gap: 15px;">
+                            <span class="stat-icon" style="font-size: 2rem;">📊</span>
+                            <div class="stat-info">
+                                <h4 style="margin:0; color:var(--text-secondary); font-size: 0.9rem;">Consistency</h4>
+                                <div class="progress-bar" style="margin-top:5px; height: 8px;">
+                                    <div id="stat-consistency-fill"
+                                        style="width: 0%; transition: width 1s ease-in-out;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- SECTION B: AI INSIGHTS -->
-                <div class="glass-card analytics-ai-card fade-in" style="margin-top: 20px;">
-                    <h3>✨ AI Study Insights</h3>
-                    <p id="ai-insights-text" style="color: var(--text-secondary); line-height: 1.6;"></p>
-                    <div class="ai-metrics" style="display: flex; gap: 15px; margin-top: 15px;">
-                        <span class="metric-pill" style="background: rgba(59, 130, 246, 0.2); padding: 5px 10px; border-radius: 12px; font-size: 0.9em; color:#60a5fa;">🕒 Best Time: <b id="ai-best-time">--</b></span>
-                        <span class="metric-pill" style="background: rgba(234, 179, 8, 0.2); padding: 5px 10px; border-radius: 12px; font-size: 0.9em; color:#facc15;">🎯 Score: <b id="ai-consistency">--</b></span>
+                    <!-- SECTION B: AI INSIGHTS -->
+                    <div class="glass-card analytics-ai-card fade-in" style="margin-top: 20px;">
+                        <h3>✨ AI Study Insights</h3>
+                        <p id="ai-insights-text" style="color: var(--text-secondary); line-height: 1.6;"></p>
+                        <div class="ai-metrics" style="display: flex; gap: 15px; margin-top: 15px;">
+                            <span class="metric-pill"
+                                style="background: rgba(59, 130, 246, 0.2); padding: 5px 10px; border-radius: 12px; font-size: 0.9em; color:#60a5fa;">🕒
+                                Best Time: <b id="ai-best-time">--</b></span>
+                            <span class="metric-pill"
+                                style="background: rgba(234, 179, 8, 0.2); padding: 5px 10px; border-radius: 12px; font-size: 0.9em; color:#facc15;">🎯
+                                Score: <b id="ai-consistency">--</b></span>
+                        </div>
+                    </div>
+
+                    <div class="analytics-lists-grid fade-in"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                        <!-- SECTION C: WEAKNESS DETECTION -->
+                        <div class="glass-card list-card">
+                            <h3>⚠️ Where You're Falling Behind</h3>
+                            <ul id="weakness-list" class="styled-list"
+                                style="color: var(--text-secondary); padding-left: 20px; line-height: 1.5;">
+                                <li>Loading...</li>
+                            </ul>
+                        </div>
+
+                        <!-- SECTION D: SMART SUGGESTIONS -->
+                        <div class="glass-card list-card">
+                            <h3>💡 How to Improve</h3>
+                            <ul id="suggestion-list" class="styled-list"
+                                style="color: var(--text-secondary); padding-left: 20px; line-height: 1.5;">
+                                <li>Loading...</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
-                <div class="analytics-lists-grid fade-in" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
-                    <!-- SECTION C: WEAKNESS DETECTION -->
-                    <div class="glass-card list-card">
-                        <h3>⚠️ Where You're Falling Behind</h3>
-                        <ul id="weakness-list" class="styled-list" style="color: var(--text-secondary); padding-left: 20px; line-height: 1.5;">
-                            <li>Loading...</li>
-                        </ul>
-                    </div>
+                <div id="analytics-loading" style="text-align:center; padding:3rem; color: var(--text-secondary);">
+                    <div class="spinner"></div><br>Analyzing your study data...
+                </div>
+                <div id="analytics-error" style="display:none; text-align:center; padding:3rem; color: #f87171;"></div>
+            </div>
 
-                    <!-- SECTION D: SMART SUGGESTIONS -->
-                    <div class="glass-card list-card">
-                        <h3>💡 How to Improve</h3>
-                        <ul id="suggestion-list" class="styled-list" style="color: var(--text-secondary); padding-left: 20px; line-height: 1.5;">
-                            <li>Loading...</li>
-                        </ul>
+            <!-- ================= DOCUMENTS SECTION ================= -->
+            <div id="section-docs" class="section">
+                <div class="glass-card">
+                    <h2>Study Documents</h2>
+
+                    <form id="doc-upload-form" class="note-form" style="margin-bottom: 20px;">
+                        <input type="text" id="doc-display-name" placeholder="Document Name (e.g. Physics Chapter 1)"
+                            required>
+                        <input type="file" id="doc-file" accept="application/pdf" style="color:var(--text-primary);"
+                            required>
+                        <button type="submit" id="doc-upload-btn">Upload PDF</button>
+                        <p id="doc-upload-msg" style="font-size: 0.85rem; margin-top: 5px;"></p>
+                    </form>
+
+                    <div id="docs-list"
+                        style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                        <p style="color:var(--text-secondary);">Loading documents...</p>
                     </div>
                 </div>
             </div>
-            
-            <div id="analytics-loading" style="text-align:center; padding:3rem; color: var(--text-secondary);">
-                <div class="spinner"></div><br>Analyzing your study data...
-            </div>
-            <div id="analytics-error" style="display:none; text-align:center; padding:3rem; color: #f87171;"></div>
-        </div>
 
-        <!-- ================= DOCUMENTS SECTION ================= -->
-        <div id="section-docs" class="section">
-            <div class="glass-card">
-                <h2>Study Documents</h2>
-                
-                <form id="doc-upload-form" class="note-form" style="margin-bottom: 20px;">
-                    <input type="text" id="doc-display-name" placeholder="Document Name (e.g. Physics Chapter 1)" required>
-                    <input type="file" id="doc-file" accept="application/pdf" style="color:var(--text-primary);" required>
-                    <button type="submit" id="doc-upload-btn">Upload PDF</button>
-                    <p id="doc-upload-msg" style="font-size: 0.85rem; margin-top: 5px;"></p>
-                </form>
+            <!-- ================= SUGGEST SECTION ================= -->
+            <div id="section-suggest" class="section">
+                <div class="glass-card">
+                    <h2>AI Task Suggestion</h2>
 
-                <div id="docs-list" style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-                    <p style="color:var(--text-secondary);">Loading documents...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= SUGGEST SECTION ================= -->
-        <div id="section-suggest" class="section">
-            <div class="glass-card">
-                <h2>AI Task Suggestion</h2>
-                
-                <div class="suggest-input-group">
-                    <h3>Your Current Energy Level</h3>
-                    <div class="energy-options">
-                        <label class="energy-btn"><input type="radio" name="energy" value="high" checked> 🔋 High</label>
-                        <label class="energy-btn"><input type="radio" name="energy" value="medium"> ⚡ Medium</label>
-                        <label class="energy-btn"><input type="radio" name="energy" value="low"> 💤 Low</label>
+                    <div class="suggest-input-group">
+                        <h3>Your Current Energy Level</h3>
+                        <div class="energy-options">
+                            <label class="energy-btn"><input type="radio" name="energy" value="high" checked> 🔋
+                                High</label>
+                            <label class="energy-btn"><input type="radio" name="energy" value="medium"> ⚡ Medium</label>
+                            <label class="energy-btn"><input type="radio" name="energy" value="low"> 💤 Low</label>
+                        </div>
                     </div>
-                </div>
 
-                <div class="suggest-input-group">
-                    <h3>Extra Tasks (Optional)</h3>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="extra-task-input" placeholder="Add any extra task (optional)">
-                        <button id="add-extra-task-btn">+ Add</button>
+                    <div class="suggest-input-group">
+                        <h3>Extra Tasks (Optional)</h3>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="extra-task-input" placeholder="Add any extra task (optional)">
+                            <button id="add-extra-task-btn">+ Add</button>
+                        </div>
+                        <ul id="extra-tasks-list" class="extra-tasks-list"></ul>
                     </div>
-                    <ul id="extra-tasks-list" class="extra-tasks-list"></ul>
-                </div>
 
-                <button id="get-suggestion-btn" class="suggestion-btn">✨ Get Smart Suggestion</button>
+                    <button id="get-suggestion-btn" class="suggestion-btn">✨ Get Smart Suggestion</button>
 
-                <div id="suggestion-loading" style="display: none; text-align: center; margin-top: 20px;">
-                    <div class="spinner"></div><br>AI is analyzing...
-                </div>
-
-                <div id="suggestion-output" style="display: none; margin-top: 20px;">
-                    <div class="best-task-card">
-                        <h3>Recommended First Task</h3>
-                        <div id="suggested-task-highlight" class="glow-text"></div>
-                        <p id="suggested-task-reason" class="reason-text"></p>
+                    <div id="suggestion-loading" style="display: none; text-align: center; margin-top: 20px;">
+                        <div class="spinner"></div><br>AI is analyzing...
                     </div>
-                    
-                    <div class="ordered-tasks-section">
-                        <h4>Optimal Priority Order</h4>
-                        <div id="ordered-tasks-list" class="ordered-tasks-list"></div>
+
+                    <div id="suggestion-output" style="display: none; margin-top: 20px;">
+                        <div class="best-task-card">
+                            <h3>Recommended First Task</h3>
+                            <div id="suggested-task-highlight" class="glow-text"></div>
+                            <p id="suggested-task-reason" class="reason-text"></p>
+                        </div>
+
+                        <div class="ordered-tasks-section">
+                            <h4>Optimal Priority Order</h4>
+                            <div id="ordered-tasks-list" class="ordered-tasks-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
+        </div>
     </div>
-</div>
 
-<!-- Ambient Sound Player -->
-<div id="music-player">
-    <div class="music-controls glass-panel">
-        <div class="music-header">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="music-icon"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-            <span>Ambient Sounds</span>
-        </div>
-        
-        <div class="sound-selector-wrapper">
-            <select id="sound-select" class="premium-select">
-                <option value="white">🌌 White Noise</option>
-                <option value="brown">🤎 Brown Noise</option>
-                <option value="rain">🌧️ Rain & Nature</option>
-            </select>
-            <div class="select-chevron">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    <!-- Ambient Sound Player -->
+    <div id="music-player">
+        <div class="music-controls glass-panel">
+            <div class="music-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="music-icon">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                <span>Ambient Sounds</span>
+            </div>
+
+            <div class="sound-selector-wrapper">
+                <select id="sound-select" class="premium-select">
+                    <option value="white">🌌 White Noise</option>
+                    <option value="brown">🤎 Brown Noise</option>
+                    <option value="rain">🌧️ Rain & Nature</option>
+                </select>
+                <div class="select-chevron">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="music-player-actions">
+                <button id="play-pause-btn" class="action-btn play-btn" title="Play/Pause">
+                    <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                        fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                </button>
+                <div class="volume-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="volume-icon">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01"
+                        value="0.5">
+                </div>
+            </div>
+
+            <div class="audio-waves">
+                <div class="wave"></div>
+                <div class="wave"></div>
+                <div class="wave"></div>
+                <div class="wave"></div>
             </div>
         </div>
 
-        <div class="music-player-actions">
-            <button id="play-pause-btn" class="action-btn play-btn" title="Play/Pause">
-                <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-            </button>
-            <div class="volume-wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="volume-icon"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01" value="0.5">
+        <button class="music-toggle-btn premium-toggle" id="music-toggle-btn" title="Ambient Sounds">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="headphone-icon">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path
+                    d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z">
+                </path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-menu">
+        <div class="menu-item active" data-section="timer">
+            <span>Timer</span>
+        </div>
+        <div class="menu-item" data-section="history">
+            <span>History</span>
+        </div>
+        <div class="menu-item" data-section="ai">
+            <span>AI</span>
+        </div>
+        <div class="menu-item" data-section="analytics">
+            <span>Analytics</span>
+        </div>
+        <div class="menu-item" data-section="docs">
+            <span>Docs</span>
+        </div>
+        <div class="menu-item" data-section="suggest">
+            <span>Suggest</span>
+        </div>
+    </div>
+
+    <!-- Modular JS -->
+    <script src="{{ url_for('static', filename='js/music.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/deadline.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/timer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/aiQuotes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/history.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ai.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/docs.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/splitview.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/suggest.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+    {% include 'feedback_widget.html' %}
+
+    <!-- Snap Indicator -->
+    <div id="snap-indicator"></div>
+
+    <!-- Draggable PDF Window -->
+    <div id="pdf-window" class="pdf-window">
+        <div class="pdf-header" id="pdf-header">
+            <div class="pdf-title" id="pdf-title">Document</div>
+            <div class="pdf-controls">
+                <button class="pdf-btn" id="pdf-close" title="Close">✖</button>
             </div>
         </div>
-        
-        <div class="audio-waves">
-            <div class="wave"></div>
-            <div class="wave"></div>
-            <div class="wave"></div>
-            <div class="wave"></div>
+        <div class="pdf-resizer" id="pdf-resizer" title="Drag to resize"></div>
+        <div class="pdf-body">
+            <iframe id="pdf-iframe" src=""></iframe>
         </div>
     </div>
-    
-    <button class="music-toggle-btn premium-toggle" id="music-toggle-btn" title="Ambient Sounds">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="headphone-icon">
-            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-        </svg>
-    </button>
-</div>
-
-<!-- Bottom Navigation -->
-<div class="bottom-menu">
-    <div class="menu-item active" data-section="timer">
-        <span>Timer</span>
-    </div>
-    <div class="menu-item" data-section="history">
-        <span>History</span>
-    </div>
-    <div class="menu-item" data-section="ai">
-        <span>AI</span>
-    </div>
-    <div class="menu-item" data-section="analytics">
-        <span>Analytics</span>
-    </div>
-    <div class="menu-item" data-section="docs">
-        <span>Docs</span>
-    </div>
-    <div class="menu-item" data-section="suggest">
-        <span>Suggest</span>
-    </div>
-</div>
-
-<!-- Modular JS -->
-<script src="{{ url_for('static', filename='js/music.js') }}"></script>
-<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
-<script src="{{ url_for('static', filename='js/deadline.js') }}"></script>
-<script src="{{ url_for('static', filename='js/timer.js') }}"></script>
-<script src="{{ url_for('static', filename='js/aiQuotes.js') }}"></script>
-<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
-<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
-<script src="{{ url_for('static', filename='js/history.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ai.js') }}"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
-<script src="{{ url_for('static', filename='js/docs.js') }}"></script>
-<script src="{{ url_for('static', filename='js/splitview.js') }}"></script>
-<script src="{{ url_for('static', filename='js/suggest.js') }}"></script>
-<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
-{% include 'feedback_widget.html' %}
-
-<!-- Snap Indicator -->
-<div id="snap-indicator"></div>
-
-<!-- Draggable PDF Window -->
-<div id="pdf-window" class="pdf-window">
-    <div class="pdf-header" id="pdf-header">
-        <div class="pdf-title" id="pdf-title">Document</div>
-        <div class="pdf-controls">
-            <button class="pdf-btn" id="pdf-close" title="Close">✖</button>
-        </div>
-    </div>
-    <div class="pdf-resizer" id="pdf-resizer" title="Drag to resize"></div>
-    <div class="pdf-body">
-        <iframe id="pdf-iframe" src=""></iframe>
-    </div>
-</div>
 
 </body>
+
 </html>

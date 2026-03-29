@@ -696,7 +696,9 @@ def get_suggestion():
     # Filter out empty or generic default tasks like "New Task"
     invalid_names = {"", "new task", "untitled task", "untitled", "task"}
     
-    db_tasks = Task.query.filter_by(user_id=session["user_id"], completed=False).all()
+    # Only consider tasks for today
+    today = datetime.now().strftime("%Y-%m-%d")
+    db_tasks = Task.query.filter_by(user_id=session["user_id"], completed=False, date=today).all()
     valid_db_tasks = [t.title.strip() for t in db_tasks if t.title and t.title.strip().lower() not in invalid_names]
     
     valid_extra_tasks = [t.strip() for t in extra_tasks if t and t.strip().lower() not in invalid_names]
