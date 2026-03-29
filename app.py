@@ -228,6 +228,12 @@ class DailyCompletion(db.Model):
     date = db.Column(db.String(20), nullable=False)
     completion_percentage = db.Column(db.Float, default=0.0)
 
+class AnalyticsCache(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    last_updated = db.Column(db.String(20), nullable=False)
+    cached_insights = db.Column(db.Text, nullable=False)
+
 def update_daily_completion_sync(user_id, date_str):
     if not date_str:
         return
@@ -778,63 +784,12 @@ Instructions:
 @app.route("/api/motivation-quote", methods=["POST"])
 def motivation_quote():
     """
-    Motivational quotes endpoint.
-    Returns JSON: { "quote": "..." }
-    On any failure, returns a safe fallback quote (no hard error to the frontend).
+    Motivational quotes endpoint (DISABLED GEMINI).
+    Returns a static quote as a safeguard.
     """
-    data = request.get_json(silent=True) or {}
-    screen = (data.get("screen") or "").strip().lower()
-
-    fallback_quote = "Stay consistent. You're building something great."
-
-    # Map UI screen IDs to prompt-friendly descriptions.
-    # (The frontend caches per-screen, but the AI prompt uses these descriptions.)
-    screen_name_map = {
-        "dashboard": "general motivation",
-        "calendar": "planning and discipline",
-        "timer": "focus and deep work",
-        "tasks": "productivity and execution",
-        "history": "productivity and execution",
-        "ai": "general motivation",
-        "analytics": "productivity and execution",
-    }
-
-    screen_name = screen_name_map.get(screen, screen_name_map["dashboard"])
-
-    prompt = (
-        "Give me a short motivational quote for a student working on "
-        f"{screen_name}.\n"
-        "Keep it under 15 words. Make it powerful and unique.\n\n"
-        "Return only the quote text, with no surrounding quotes or extra commentary."
-    )
-
-    try:
-        current_key = os.getenv("GEMINI_API_KEY")
-        if not current_key:
-            return jsonify({"quote": fallback_quote, "fallback": True}), 200
-
-        # local_client = genai.Client(api_key=current_key)
-        # quote = generate_gemini_text(local_client, prompt).strip().strip('"').strip("'")
-
-        quote = generate_gemini_text(prompt)
-
-        if not quote:
-            return jsonify({"quote": fallback_quote, "fallback": True}), 200
-
-        # Enforce the "under 15 words" requirement defensively.
-        words = quote.split()
-        if len(words) > 15:
-            quote = " ".join(words[:15]).strip()
-            # Keep punctuation natural if truncation cut mid-sentence.
-            if quote and quote[-1] not in ".!?":
-                quote = quote + "."
-
-        return jsonify({"quote": quote, "fallback": False}), 200
-
-    except Exception as e:
-        # Never crash the page due to AI issues.
-        print("Gemini quote error:", str(e))
-        return jsonify({"quote": fallback_quote, "fallback": True}), 200
+    # Gemini API is no longer used for quotes to save on quota.
+    # Frontend now handles quotes locally from a list.
+    return jsonify({"quote": "Discipline beats motivation.", "fallback": True}), 200
 
 
 @app.route("/get_analytics", methods=["GET"])
@@ -947,29 +902,52 @@ Return strictly a JSON object:
     import json
     import re
     
-    try:
-        if total_tasks_all == 0:
-             raise ValueError("No task data")
-        reply = generate_gemini_text(prompt)
-        
-        if not reply:
-             raise ValueError("Empty response from Gemini API (possibly due to invalid or leaked API key).")
-             
-        reply_clean = reply.strip()
-        match = re.search(r'```(?:json)?\s*(.*?)\s*```', reply_clean, re.DOTALL)
-        if match:
-             reply_clean = match.group(1).strip()
-        ai_analysis = json.loads(reply_clean)
-    except Exception as e:
-        print("Analytics Gemini Error:", e)
-        extra_info = "Not enough data yet. Start completing tasks!" if total_tasks_all == 0 else "We couldn't generate AI insights at the moment due to an API error."
-        ai_analysis = {
-            "insights": extra_info,
-            "weaknesses": ["Not enough data" if total_tasks_all == 0 else "Analysis temporarily unavailable"],
-            "suggestions": ["Keep logging tasks regularly to get smart suggestions."],
-            "best_study_time": most_productive_time,
-            "consistency_score": f"{round(overall_avg)}/100"
-        }
+    today_str = today.strftime("%Y-%m-%d")
+    cache = AnalyticsCache.query.filter_by(user_id=user_id).first()
+    
+    # Use cache if updated today AND we have some data
+    if cache and cache.last_updated == today_str and total_tasks_all > 0:
+        try:
+            ai_analysis = json.loads(cache.cached_insights)
+        except:
+            ai_analysis = None
+    else:
+        ai_analysis = None
+
+    if not ai_analysis:
+        try:
+            if total_tasks_all == 0:
+                 raise ValueError("No task data")
+            reply = generate_gemini_text(prompt)
+            
+            if not reply:
+                 raise ValueError("Empty response from Gemini API")
+                 
+            reply_clean = reply.strip()
+            match = re.search(r'```(?:json)?\s*(.*?)\s*```', reply_clean, re.DOTALL)
+            if match:
+                 reply_clean = match.group(1).strip()
+            ai_analysis = json.loads(reply_clean)
+            
+            # Update cache
+            if not cache:
+                cache = AnalyticsCache(user_id=user_id, last_updated=today_str, cached_insights=json.dumps(ai_analysis))
+                db.session.add(cache)
+            else:
+                cache.last_updated = today_str
+                cache.cached_insights = json.dumps(ai_analysis)
+            db.session.commit()
+            
+        except Exception as e:
+            print("Analytics Gemini Error:", e)
+            extra_info = "Not enough data yet. Start completing tasks!" if total_tasks_all == 0 else "Daily AI analysis quota reached or API error. Try again tomorrow."
+            ai_analysis = {
+                "insights": extra_info,
+                "weaknesses": ["Analysis temporarily unavailable"],
+                "suggestions": ["Keep logging tasks regularly."],
+                "best_study_time": most_productive_time,
+                "consistency_score": f"{round(overall_avg)}/100"
+            }
         
     return jsonify({
         "graph_data": graph_data,
