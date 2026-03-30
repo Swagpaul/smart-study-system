@@ -57,9 +57,13 @@ document.addEventListener("DOMContentLoaded", () => {
         suggestionOutput.classList.remove("fade-in");
         
         try {
+            const userApiKey = localStorage.getItem('gemini_user_api_key');
+            const headers = { "Content-Type": "application/json" };
+            if (userApiKey) headers["X-Gemini-API-Key"] = userApiKey;
+
             const response = await fetch("/get_suggestion", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: headers,
                 body: JSON.stringify({
                     energy_level: energyLevel,
                     extra_tasks: extraTasks

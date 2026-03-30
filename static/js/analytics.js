@@ -14,7 +14,13 @@ async function loadAnalyticsData() {
     document.getElementById('analytics-loading').style.display = 'block';
 
     try {
-        const response = await fetch('/get_analytics');
+        const userApiKey = localStorage.getItem('gemini_user_api_key');
+        const headers = {};
+        if (userApiKey) headers["X-Gemini-API-Key"] = userApiKey;
+
+        const response = await fetch('/get_analytics', {
+            headers: headers
+        });
         const data = await response.json();
 
         if (response.ok) {

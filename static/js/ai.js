@@ -58,9 +58,13 @@ document.addEventListener("DOMContentLoaded", function() {
         appendMessage("Thinking...", "ai");
 
         try {
+            const userApiKey = localStorage.getItem('gemini_user_api_key');
+            const headers = { "Content-Type": "application/json" };
+            if (userApiKey) headers["X-Gemini-API-Key"] = userApiKey;
+
             const response = await fetch("/api/ask-ai", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: headers,
                 body: JSON.stringify({ question: message })
             });
 

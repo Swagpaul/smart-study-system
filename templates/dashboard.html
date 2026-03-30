@@ -47,6 +47,13 @@
                     <path d="M5.5 16h13l-4-5h3l-5-6-5 6h3l-4 5z"></path>
                 </svg>
             </a>
+
+            <!-- API Key Settings Button -->
+            <div class="nav-item stylish-btn api-settings-btn" id="open-api-modal" title="API Key Settings" aria-label="API Key Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3L15.5 7.5z"></path>
+                </svg>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -492,6 +499,40 @@
         </div>
     </div>
 
+    </div>
+
+    <!-- API Key Settings Modal -->
+    <div class="feedback-modal-overlay" id="api-modal-overlay">
+        <div class="feedback-modal api-key-modal">
+            <div class="feedback-modal-header">
+                <h2>🔑 API Key Settings</h2>
+                <button class="feedback-close" id="close-api-modal">×</button>
+            </div>
+            
+            <div class="api-status-banner" id="api-status-banner">
+                <span class="status-indicator default" id="status-text">Using default key</span>
+            </div>
+
+            <div class="note-form" style="margin-top: 15px;">
+                <label for="gemini-api-key" style="font-weight: 500; font-size: 0.9rem;">Gemini API Key</label>
+                <div class="password-input-wrapper" style="position: relative;">
+                    <input type="password" id="gemini-api-key" placeholder="Enter your Gemini API key" style="padding-right: 40px;">
+                    <button type="button" id="toggle-key-visibility" class="toggle-visibility-btn" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 5px; box-shadow: none; color: var(--text-secondary);">
+                        👁️
+                    </button>
+                </div>
+                <p id="api-key-error" style="color: #f87171; font-size: 0.8rem; margin: 5px 0; display: none;"></p>
+            </div>
+
+            <div class="feedback-controls" style="margin-top: 20px;">
+                <button id="test-api-key-btn" style="background: linear-gradient(135deg, #6366f1, #3b82f6); flex: 1;">Test Key</button>
+                <button id="save-api-key-btn" style="background: linear-gradient(135deg, #34d399, #10b981); flex: 1;">Save Key</button>
+                <button id="clear-api-key-btn" style="background: linear-gradient(135deg, #f87171, #ef4444); flex: 1;">Clear Key</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/api_settings.js') }}"></script>
 </body>
 
 </html>

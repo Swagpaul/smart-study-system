@@ -166,14 +166,18 @@ def extract_gemini_text(response):
 #     raise RuntimeError("Unsupported Gemini SDK: neither responses nor models API available")
 
 
-def generate_gemini_text(prompt):
+def generate_gemini_text(prompt, api_key=None):
     try:
         import google.generativeai as genai
 
-        genai.configure(api_key=GEMINI_API_KEY)
+        # Use provided user key or fallback to server default
+        effective_key = api_key if api_key else GEMINI_API_KEY
+        
+        if not effective_key:
+            return ""
 
+        genai.configure(api_key=effective_key)
         model = genai.GenerativeModel(GEMINI_MODEL)
-
         response = model.generate_content(prompt)
 
         return response.text if response.text else ""
@@ -636,6 +640,8 @@ def ask_ai():
     if not is_academic_question(question):
         return jsonify({"reply": "I am designed to help only with study-related queries."})
 
+    user_api_key = request.headers.get("X-Gemini-API-Key")
+
     prompt = (
         "You are a strict study assistant. Give clear, concise, educational answers.\n"
         "Answer in a short study-friendly format with examples where appropriate.\n\n"
@@ -644,18 +650,7 @@ def ask_ai():
     )
 
     try:
-        current_key = os.getenv("GEMINI_API_KEY")
-
-        if not current_key:
-            print("Gemini API key missing")
-            return jsonify({"error": "AI service error: API key missing"}), 500
-
-        # ✅ Use local client (no scope issues)
-        # local_client = genai.Client(api_key=current_key)
-
-        # reply = generate_gemini_text(local_client, prompt)
-
-        reply = generate_gemini_text(prompt)
+        reply = generate_gemini_text(prompt, api_key=user_api_key)
 
         if not reply:
             print("Gemini API returned empty text response")
@@ -763,8 +758,10 @@ Instructions:
     "ordered_tasks": ["task1", "task2", "task3"]
 }}
 """
+    user_api_key = request.headers.get("X-Gemini-API-Key")
+
     try:
-        reply = generate_gemini_text(prompt)
+        reply = generate_gemini_text(prompt, api_key=user_api_key)
         import json
         import re
         
@@ -792,6 +789,33 @@ def motivation_quote():
     # Gemini API is no longer used for quotes to save on quota.
     # Frontend now handles quotes locally from a list.
     return jsonify({"quote": "Discipline beats motivation.", "fallback": True}), 200
+
+
+@app.route("/api/test-key", methods=["POST"])
+def test_api_key():
+    """Test if a provided Gemini API key is valid."""
+    data = request.get_json()
+    test_key = data.get("api_key")
+    
+    if not test_key:
+        return jsonify({"success": False, "error": "No API key provided"}), 400
+        
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=test_key)
+        model = genai.GenerativeModel(GEMINI_MODEL)
+        # Minimal prompt to test connectivity
+        response = model.generate_content("Say 'OK'")
+        if response.text:
+            return jsonify({"success": True, "message": "API key is valid!"})
+        else:
+            return jsonify({"success": False, "error": "Empty response from API"})
+    except Exception as e:
+        error_msg = str(e)
+        print("API Key Test Error:", error_msg)
+        if "API_KEY_INVALID" in error_msg:
+            return jsonify({"success": False, "error": "Invalid API key"}), 401
+        return jsonify({"success": False, "error": f"Error: {error_msg}"}), 500
 
 
 @app.route("/get_analytics", methods=["GET"])
@@ -920,7 +944,9 @@ Return strictly a JSON object:
         try:
             if total_tasks_all == 0:
                  raise ValueError("No task data")
-            reply = generate_gemini_text(prompt)
+            
+            user_api_key = request.headers.get("X-Gemini-API-Key")
+            reply = generate_gemini_text(prompt, api_key=user_api_key)
             
             if not reply:
                  raise ValueError("Empty response from Gemini API")
