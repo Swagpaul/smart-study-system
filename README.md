@@ -117,8 +117,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/smart-planner.git
-cd smart-planner
+git clone https://github.com/Swagpaul/smart-study-system.git
+cd smart-study-system
 ```
 
 ### 2. Create a Virtual Environment
