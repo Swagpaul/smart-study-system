@@ -1,4 +1,4 @@
-# 🌱 Smart Planner
+# 🌱 Smart Study System
 
 > An intelligent, gamified study planning and task management web application powered by Google Gemini AI
 
@@ -146,7 +146,7 @@ pip install -r requirements.txt
 Create a `.env` file in the project root directory:
 
 ```bash
-cd smart-planner
+cd smart-study-system
 echo # Create .env file (Windows)
 # or touch .env (macOS/Linux)
 ```
@@ -288,7 +288,7 @@ Visit `http://localhost:5000` in your browser
 ## 📂 Project Structure
 
 ```
-smart-planner/
+smart-study-system/
 ├── app.py                          # Main Flask application
 ├── requirements.txt                # Python dependencies
 ├── GEMINI_SETUP.md                # AI setup documentation
@@ -592,8 +592,8 @@ Contributions are welcome! Here's how to contribute:
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/yourusername/smart-planner.git
-   cd smart-planner
+   git clone https://github.com/yourusername/smart-study-system.git
+   cd smart-study-system
    ```
 
 2. **Create a feature branch**
@@ -659,8 +659,8 @@ Conditions:
 
 ## 🙋 Support & Questions
 
-- **Issues**: Report bugs via [GitHub Issues](https://github.com/yourusername/smart-planner/issues)
-- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/yourusername/smart-planner/discussions)
+- **Issues**: Report bugs via [GitHub Issues](https://github.com/yourusername/smart-study-system/issues)
+- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/yourusername/smart-study-system/discussions)
 - **Documentation**: Check [GEMINI_SETUP.md](GEMINI_SETUP.md) for AI setup help
 
 ## 🎯 Roadmap
