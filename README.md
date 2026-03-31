@@ -697,6 +697,17 @@ Conditions:
 
 ## 👨‍💻 Author
 
+Hi, I'm **Swagata Paul** 👋  
+A passionate developer focused on building **impactful and intelligent systems**.
+
+- 🎓 CSE @ VIT Vellore  
+- 🧠 Interested in AI, Backend Systems & Product Development  
+- 🔥 Currently working on real-world, scalable applications  
+
+### 🌐 Connect with me
+- GitHub: https://github.com/Swagpaul
+- LinkedIn: https://www.linkedin.com/in/swagata-paul-046389333
+
 Created with ❤️ for students and learners
 
 ---
