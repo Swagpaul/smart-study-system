@@ -231,12 +231,14 @@ body.is-dragging .pdf-body {
     width: 120px;
     height: 4px;
     -webkit-appearance: none;
+    appearance: none;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 2px;
 }
 
 .setting-group input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     width: 12px;
     height: 12px;
     background: #3b82f6;
