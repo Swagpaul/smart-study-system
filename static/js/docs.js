@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <h3 class="note-title" style="margin-bottom: 5px; word-break: break-all;">${escapeHtml(doc.display_name)}</h3>
                     </div>
                     <div style="display:flex; gap:10px; margin-top: 10px;">
-                        <button class="open-doc-btn" data-url="${doc.url}" data-title="${escapeHtml(doc.display_name)}" style="flex:1; padding:6px 10px; font-size:0.9rem; background:linear-gradient(135deg, #3b82f6, #2563eb); color:white; border:none; border-radius:6px; cursor:pointer;">Open</button>
+                        <button class="open-doc-btn" data-url="${doc.url}" data-id="${doc.id}" data-title="${escapeHtml(doc.display_name)}" style="flex:1; padding:6px 10px; font-size:0.9rem; background:linear-gradient(135deg, #3b82f6, #2563eb); color:white; border:none; border-radius:6px; cursor:pointer;">Open</button>
                         <button class="delete-doc-btn" data-id="${doc.id}" style="padding:6px 10px; font-size:0.9rem; background:rgba(239, 68, 68, 0.2); border:1px solid rgba(239, 68, 68, 0.4); color:#ef4444; border-radius:6px; cursor:pointer; transition:background 0.2s;">Delete</button>
                     </div>
                 </div>
@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Attach event listeners for dynamic buttons
             document.querySelectorAll(".open-doc-btn").forEach(btn => {
                 btn.addEventListener("click", () => {
-                    openPdfViewer(btn.dataset.url, btn.dataset.title);
+                    openPdfViewer(btn.dataset.url, btn.dataset.title, btn.dataset.id);
                 });
             });
 

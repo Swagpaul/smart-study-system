@@ -232,6 +232,15 @@ class DailyCompletion(db.Model):
     date = db.Column(db.String(20), nullable=False)
     completion_percentage = db.Column(db.Float, default=0.0)
 
+class Annotation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey("document.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    page_number = db.Column(db.Integer, nullable=False)
+    type = db.Column(db.String(50), nullable=False)  # 'highlight' or 'note'
+    data = db.Column(db.Text, nullable=False)  # JSON string containing coordinates, color, text, etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class AnalyticsCache(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
@@ -584,6 +593,51 @@ def delete_doc(id):
     db.session.delete(doc)
     db.session.commit()
     return jsonify({"success": True, "message": "Document deleted"})
+    
+@app.route("/get-annotations/<int:doc_id>", methods=["GET"])
+def get_annotations(doc_id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    annotations = Annotation.query.filter_by(document_id=doc_id, user_id=session["user_id"]).all()
+    return jsonify([
+        {
+            "id": a.id,
+            "page_number": a.page_number,
+            "type": a.type,
+            "data": a.data
+        } for a in annotations
+    ])
+
+@app.route("/save-annotation", methods=["POST"])
+def save_annotation():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    new_annotation = Annotation(
+        document_id=data["document_id"],
+        user_id=session["user_id"],
+        page_number=data["page_number"],
+        type=data["type"],
+        data=data["data"]
+    )
+    db.session.add(new_annotation)
+    db.session.commit()
+    return jsonify({"success": True, "id": new_annotation.id})
+
+@app.route("/delete-annotation/<int:id>", methods=["DELETE"])
+def delete_annotation(id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    annotation = db.session.get(Annotation, id)
+    if not annotation or annotation.user_id != session["user_id"]:
+        return jsonify({"error": "Annotation not found or unauthorized"}), 404
+    
+    db.session.delete(annotation)
+    db.session.commit()
+    return jsonify({"success": True})
 
 def is_academic_question(message):
     """Simple study filter: check if question contains study-related keywords."""

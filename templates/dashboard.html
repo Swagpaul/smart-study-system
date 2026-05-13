@@ -489,15 +489,66 @@
     <div id="pdf-window" class="pdf-window">
         <div class="pdf-header" id="pdf-header">
             <div class="pdf-title" id="pdf-title">Document</div>
+            <div class="pdf-toolbar">
+                <button class="tool-btn active" id="tool-cursor" title="Select">🖱️</button>
+                <button class="tool-btn" id="tool-pen" title="Pen">🖋️</button>
+                <button class="tool-btn" id="tool-highlighter" title="Highlighter">🖍️</button>
+                <button class="tool-btn" id="tool-note" title="Add Note">📝</button>
+                <button class="tool-btn" id="tool-eraser" title="Eraser">🧹</button>
+                <div class="tool-separator"></div>
+                <button class="tool-btn" id="pdf-prev" title="Previous Page">◀</button>
+                <span id="pdf-page-num">1 / 1</span>
+                <button class="tool-btn" id="pdf-next" title="Next Page">▶</button>
+            </div>
             <div class="pdf-controls">
                 <button class="pdf-btn" id="pdf-close" title="Close">✖</button>
             </div>
         </div>
+
+        <!-- Brush Settings Panel -->
+        <div id="brush-settings" class="brush-settings-panel">
+            <div class="setting-group">
+                <label>Color</label>
+                <div class="color-palette">
+                    <div class="color-swatch active" style="background: #3b82f6;" data-color="#3b82f6"></div>
+                    <div class="color-swatch" style="background: #ef4444;" data-color="#ef4444"></div>
+                    <div class="color-swatch" style="background: #10b981;" data-color="#10b981"></div>
+                    <div class="color-swatch" style="background: #f59e0b;" data-color="#f59e0b"></div>
+                    <div class="color-swatch" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+                    <div class="color-swatch" style="background: #ffffff;" data-color="#ffffff"></div>
+                    <div class="color-swatch" style="background: #000000;" data-color="#000000"></div>
+                    <input type="color" id="custom-color-picker" value="#3b82f6">
+                </div>
+            </div>
+            <div class="setting-group">
+                <div style="display:flex; justify-content:space-between;">
+                    <label>Size</label>
+                    <span id="brush-size-val">5px</span>
+                </div>
+                <input type="range" id="brush-size-slider" min="1" max="50" value="5">
+            </div>
+            <div class="setting-group">
+                <div style="display:flex; justify-content:space-between;">
+                    <label>Opacity</label>
+                    <span id="brush-opacity-val">100%</span>
+                </div>
+                <input type="range" id="brush-opacity-slider" min="10" max="100" value="100">
+            </div>
+        </div>
+
         <div class="pdf-resizer" id="pdf-resizer" title="Drag to resize"></div>
-        <div class="pdf-body">
-            <iframe id="pdf-iframe" src=""></iframe>
+        <div class="pdf-body" id="pdf-viewer-container">
+            <!-- PDF.js will render pages here -->
+            <div id="pdf-render-area"></div>
         </div>
     </div>
+
+    <!-- PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Initialize PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
 
     </div>
 
