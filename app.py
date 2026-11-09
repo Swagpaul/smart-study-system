@@ -13,6 +13,7 @@ load_dotenv()  # load .env from project root
 app = Flask(__name__)
 CORS(app)
 
+
 # ============================================
 # Gemini AI Configuration (google-genai)
 # ============================================
